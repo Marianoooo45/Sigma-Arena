@@ -1,3 +1,4 @@
+// lib/question_sync.ts
 import fs from "fs";
 import path from "path";
 import db, { ensureMasteryAndActivity } from "./db";

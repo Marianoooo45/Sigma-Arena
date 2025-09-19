@@ -1,3 +1,4 @@
+// app/api/session/next/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { openSession, selectBatch, loadQuestion } from "@/lib/model";
 import { ensureQuestionsSynced } from "@/lib/question_sync";

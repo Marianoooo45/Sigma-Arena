@@ -1,3 +1,4 @@
+// scripts/seed.ts
 import db, { ensureMasteryAndActivity } from "@/lib/db";
 import fs from "fs";
 import path from "path";
