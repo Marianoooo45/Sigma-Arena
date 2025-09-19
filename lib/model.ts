@@ -1,3 +1,4 @@
+// lib/model.ts
 import db, { ensureMasteryAndActivity, tx } from "./db";
 
 const SIG_A = 4.0;   // pente logistique

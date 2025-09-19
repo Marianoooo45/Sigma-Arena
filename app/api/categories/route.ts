@@ -1,3 +1,4 @@
+// app/api/categories/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import db, { ensureMasteryAndActivity } from "@/lib/db";
 

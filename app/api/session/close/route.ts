@@ -1,3 +1,4 @@
+// app/api/session/close/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { closeSession } from "@/lib/model";
 
