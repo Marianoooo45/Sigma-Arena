@@ -1,73 +1,62 @@
-rev-market/
+Sigma-Arena/
 ├─ app/
+│  ├─ api/
+│  │  ├─ categories/
+│  │  │  ├─ [id]/
+│  │  │  │  └─ route.ts
+│  │  │  └─ route.ts
+│  │  ├─ game/
+│  │  │  ├─ categories/
+│  │  │  │  └─ route.ts
+│  │  │  └─ questions/
+│  │  │     └─ route.ts
+│  │  ├─ questions/
+│  │  │  └─ import/
+│  │  │     └─ route.ts
+│  │  ├─ session/
+│  │  │  ├─ answer/
+│  │  │  │  └─ route.ts
+│  │  │  ├─ close/
+│  │  │  │  └─ route.ts
+│  │  │  └─ next/
+│  │  │     └─ route.ts
+│  │  └─ stats/
+│  │     └─ route.ts
+│  ├─ play/
+│  │  └─ page.tsx
+│  ├─ settings/
+│  │  └─ page.tsx
+│  ├─ globals.css
 │  ├─ layout.tsx
-│  ├─ page.tsx                     # World / Map
-│  ├─ play/page.tsx                # Run overlay (tu l'as)
-│  ├─ settings/                    # (ok)
-│  ├─ globals.css                  # (ok v3)
-│  └─ api/
-│     ├─ categories/
-│     │  ├─ route.ts              # GET /api/categories               (liste)
-│     │  └─ [id]/route.ts         # GET /api/categories/[id]          (détail/children)
-│     ├─ game/
-│     │  ├─ categories/route.ts   # (facultatif) alias vers /categories
-│     │  └─ questions/route.ts    # GET /api/game/questions?category_id=&n=&type=
-│     ├─ questions/
-│     │  └─ import/route.ts       # POST import JSON (admin/dev)
-│     ├─ session/
-│     │  ├─ next/route.ts         # POST question suivante (si tu veux un mode “stateful”)
-│     │  ├─ answer/route.ts       # POST évaluer une réponse
-│     │  └─ close/route.ts        # POST fermer la session (bilan)
-│     └─ stats/                   # (garde le dossier; endpoints à écrire J12)
-│        └─ route.ts?             # GET métriques simples (opt)
-│
+│  └─ page.tsx
 ├─ components/
-│  ├─ nav/
-│  │  └─ TopBar.tsx
-│  ├─ ui/{Button,Badge,Card,Progress,Switch,Modal,Toast}.tsx
-│  ├─ hud/HUD.tsx
-│  ├─ map/{RegionCard,RegionModal}.tsx
-│  ├─ play/{Arena,QuestionMCQ,QuestionCalc,QuestionCase,RunSummary}.tsx
-│  ├─ quests/QuestMini.tsx
-│  ├─ talents/{TalentTree,TalentNode}.tsx
-│  ├─ boss/BossBattle.tsx
-│  ├─ codex/{CodexGrid,CodexCard}.tsx
-│  └─ fx/{ConfettiPortal,Sfx}.tsx
-│
+│  ├─ hud/
+│  │  └─ HUD.tsx
+│  └─ nav/
+│     └─ TopBar.tsx
 ├─ lib/
-│  ├─ types.ts               # Cat, Q, Skill, Profile, Quest, RunPayload…
-│  ├─ constants.ts           # SPEED_T1/T2, MAX_COMBO…
-│  ├─ xp.ts                  # xpNeeded, gain formulas
-│  ├─ scoring.ts             # computeXP, speed tier, combo
-│  ├─ rng.ts                 # shuffle, pickWeighted
-│  ├─ audio.ts               # beep(), sfx mapping
-│  ├─ confetti.ts            # tiny DOM confetti
-│  ├─ storage.local.ts       # profile/daily/inventory/talents (localStorage)
-│  ├─ validation.ts          # zod schemas pour API payloads
-│  └─ api.client.ts          # fetchers front (typed) → tes routes existantes
-│
-├─ data/
-│  ├─ seed/categories.json
-│  ├─ seed/questions/{rates.json,credit.json,equity.json,structs.json,cross.json}
-│  └─ codex/cards.json
-│
-├─ hooks/
-│  ├─ useProfile.ts
-│  ├─ useDaily.ts
-│  ├─ useRun.ts
-│  └─ useSound.ts
-│
-├─ db/                       # (phase DB, plus tard)
-│  ├─ schema.prisma
-│  ├─ client.ts
-│  └─ seed.ts
-│
+│  ├─ db.ts
+│  ├─ model.ts
+│  └─ question_sync.ts
 ├─ public/
-│  ├─ sfx/{ok.mp3,ko.mp3}
-│  └─ images/...
-├─ tests/{unit, e2e}
-├─ scripts/{import-questions.ts, dev-reset.ps1, export-stats.ts}
-├─ tailwind.config.cjs
-├─ postcss.config.cjs
+│  ├─ images/
+│  │  ├─ Generated Image September 19, 2025 - 2_05AM.png
+│  │  ├─ logo-dark.png
+│  │  ├─ logo-full.png
+│  │  ├─ logo-light.png
+│  │  └─ logo-mark.png
+│  ├─ questions.json
+│  └─ seed-questions.json
+├─ scripts/
+│  └─ seed.ts
+├─ .gitignore
+├─ architecture.txt
+├─ next-env.d.ts
 ├─ next.config.mjs
-└─ tsconfig.json
+├─ package-lock.json
+├─ package.json
+├─ postcss.config.cjs
+├─ roadmap.txt
+├─ tailwind.config.cjs
+├─ tsconfig.json
+└─ Whitepaper.txt
