@@ -1,0 +1,125 @@
+Roadmap (12 jours) — adaptée à ta base actuelle
+
+Chaque jour : fichiers précis à modifier/créer.
+
+J1 — HUD + DS minimal (focus UI de base)
+
+Crée components/ui/* : Button, Badge, Card, Progress, Modal, Toast.
+
+Crée components/hud/HUD.tsx et monte-le dans app/layout.tsx.
+
+Mets à jour styles/globals.css (déjà OK).
+
+Livrable : top-bar RPG (lvl, xp, gold, streak) partout.
+
+J2 — Carte du monde & Donjons (branché à /api/categories)
+
+app/page.tsx : affiche les régions (parents) via GET /api/categories.
+
+components/map/RegionCard.tsx, RegionModal.tsx : sélection sous-cats + slider nombre de Q.
+
+Livrable : tu cliques une région, tu choisis les sous-cats, bouton “Lancer”.
+
+J3 — Tirage questions & run MCQ (ta page play/page.tsx)
+
+Branche play/page.tsx sur GET /api/game/questions avec selectedSubs.
+
+Ajoute components/play/Arena.tsx, QuestionMCQ.tsx, RunSummary.tsx.
+
+lib/{xp.ts, scoring.ts, rng.ts, audio.ts, confetti.ts, constants.ts}.
+
+Livrable : run complet MCQ avec +XP global/skill, confetti & sfx.
+
+J4 — Quêtes quotidiennes HUD (tu as la logique → UI propre)
+
+hooks/useDaily.ts (propre & isolé).
+
+components/quests/QuestMini.tsx + intégration dans HUD.
+
+lib/storage.local.ts : persister daily proprement.
+
+Livrable : 3 quêtes visibles, barre de progression, bouton “Réclamer”.
+
+J5 — Type “calc” + Explications modales
+
+components/play/QuestionCalc.tsx (+ bouton “Voir la réponse”).
+
+Étends /api/game/questions pour renvoyer type: "calc" sur certains items.
+
+Livrable : run mélangé MCQ/Calc sans bug.
+
+J6 — Boss v1 (mini-cas 5 étapes)
+
+app/boss/page.tsx (nouvelle route simple).
+
+components/boss/BossBattle.tsx : enchaînement 5 Q liées, timer global.
+
+Données : ajoute 1 mini-cas dans data/seed/questions/structs.json.
+
+Livrable : victoire → petit artefact cosmétique (placeholder).
+
+J7 — Codex (cartes-savoir)
+
+app/codex/page.tsx, components/codex/{CodexGrid,CodexCard}.tsx.
+
+data/codex/cards.json; drop sur bonne réponse (faible proba).
+
+lib/storage.local.ts : userCodex: number[].
+
+Livrable : page Codex qui liste les cartes obtenues, lecture d’une carte.
+
+J8 — Talents v1 (3×3) + 2 passifs actifs
+
+app/talents/page.tsx, components/talents/{TalentTree,TalentNode}.tsx.
+
+lib/constants.ts : catalogue 9 talents.
+
+lib/storage.local.ts : talentsUnlocked, talentsEquipped.
+
+lib/scoring.ts lit les passifs (ex. +1s speed window, +1 XP global).
+
+Livrable : unlock/équipement persistant, impact sur la run.
+
+J9 — Glyphes/Inventaire
+
+lib/storage.local.ts : inventory: Record<ItemId, qty>.
+
+Arena.tsx : petite ceinture d’items, boutons pour consommer (reroll/reveal/+10s).
+
+Livrable : consommables de run qui modifient la question/timer.
+
+J10 — Stabilise tes routes API (celles que TU as déjà)
+
+Solidifie :
+
+GET /api/categories, [id]
+
+GET /api/game/questions (sampling pondéré par difficulté si possible)
+
+POST /api/session/{next,answer,close} (retourne des mocks corrects)
+
+GET /api/stats (facultatif : quelques compteurs)
+
+lib/api.client.ts : fetchers typés Zod (validation.ts).
+
+Livrable : contrat gelé. Le front n’a plus de “any”.
+
+J11 — Passage DB (optionnel dans l’immédiat)
+
+Mets db/schema.prisma minimal (users, categories, questions).
+
+scripts/import-questions.ts (charge data/seed).
+
+Basculer /api/categories et /api/game/questions vers DB (si tu veux).
+
+Livrable : mêmes endpoints, mais backed par DB.
+
+J12 — Analytics/A11y + page Profil
+
+server/analytics.ts (log simple en console/DB).
+
+Événements : RUN_START/END, QUESTION_ANSWERED, QUEST_CLAIMED.
+
+app/profile/page.tsx : résumé XP, skills, codex, talents.
+
+Livrable : instrumentation de base + page profil.

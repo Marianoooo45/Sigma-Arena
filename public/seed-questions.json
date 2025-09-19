@@ -1,0 +1,17 @@
+[
+  {
+    "category": "Rates (Swaps)",
+    "type": "MCQ",
+    "prompt": "Quel est le risque résiduel principal d'un swap de taux après couverture parfaite du risque de taux ?",
+    "choices": ["Base", "Crédit contrepartie", "FX", "Liquidité intraday"],
+    "answer": 1,
+    "difficulty": 0.55
+  },
+  {
+    "category": "Options (vanilla/grecs)",
+    "type": "short",
+    "prompt": "Explique Gamma et sa relation avec Delta hedging.",
+    "answer": "Gamma = dérivée de Delta; gamma élevé => delta évolue vite, besoin de ré-hedger souvent.",
+    "difficulty": 0.6
+  }
+]

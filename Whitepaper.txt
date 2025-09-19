@@ -1,0 +1,418 @@
+Whitepaper — Arcane Markets (MMORPG d’apprentissage en finance de marché)
+0. Résumé exécutif
+
+Arcane Markets est un MMORPG pédagogique centré sur la finance de marché. L’utilisateur progresse en explorant des régions thématiques (Rates, Credit, Equity, Produits Structurés, Cross-Asset), en relevant des défis courts (QCM, calcul mental, mini-cas) et en débloquant des talents, loots et artefacts. La boucle de jeu est calibrée pour maximiser la gratification immédiate (feedback audiovisuel, +XP, séries/streaks) sans sacrifier la profondeur (arbre de talents, “boss” sous forme d’études de cas, codex de savoir, saisons).
+
+Le produit vise :
+
+Apprentissage mesurable (compétences par catégorie, XP globale)
+
+Rétention (quêtes journalières/hebdo, saisons thématiques)
+
+Identité forte (univers techno-fantasy néon, méta-progression)
+
+Éthique (zéro pay-to-win, dopamine bien calibrée, progression réelle)
+
+1. Vision & Positionnement
+1.1 Problème
+
+La formation en finance de marché est souvent aride, peu interactive, et mesure mal la progression. Les apprenants décrochent ou apprennent de façon passive.
+
+1.2 Proposition de valeur
+
+Engagement : boucles courtes, renforcement positif, rituel de level-up.
+
+Clarté : feedback immédiat, explications brèves post-question, codex révisable.
+
+Personnalisation : compétences par thème, talents adaptés au style de jeu.
+
+Continuité : saisons et quêtes rythment l’étude sur la durée.
+
+1.3 Public
+
+Vendeurs/structurers/analystes/étudiants en marchés.
+
+Candidats entretiens (sales/trading/structuring/risk).
+
+Curieux “power users” aimant la gamification.
+
+2. Univers & Direction artistique
+2.1 Lore synthétique
+
+Arcane Markets : un monde où les forces de marché sont des entités.
+
+Guildes : Rates (Temps/Term Structure), Credit (Default/Spread), Equity (Momentum/Factor), Structurés (Payoffs hybrides), Cross-Asset (Corrélations/Régimes).
+
+Écoles : Pricing, Risk, Sales, Macro Sensing.
+
+2.2 Ton & UI
+
+Techno-fantasy néon ; verre dépoli, halos, confetti, micro-animations.
+
+Lisibilité : contraste élevé, hiérarchie typographique nette.
+
+Signal dopaminergique : discret mais fréquent (sons courts, glows, tags +XP).
+
+3. Boucles de jeu
+3.1 Moment-to-moment (session 3–7 min)
+
+Sélection Région → Sous-catégories (donjons).
+
+Suite de défis (QCM/Calc/Mini-cas).
+
+Feedback immédiat : son, confetti, +XP global, +XP de skill, +or, bonus vitesse/streak.
+
+Loot : carte savoir (codex), glyphe (consommable), cosmétique.
+
+Bilan : progression skills, quêtes, insights (“forces/faiblesses”).
+
+3.2 Méta-progression (jour/semaine/saison)
+
+Quêtes quotidiennes/hebdo + arcs narratifs de saison.
+
+Arbre de talents (3 voies : Sales, Risk, Pricing).
+
+Boss (mini-cas à 5 questions enchaînées).
+
+Codex (collection de cartes-savoir).
+
+4. Contenu & Types de défis
+4.1 Types
+
+MCQ : 4 options, 1 correcte (supporte reveal, reroll).
+
+Calcul éclair : mental (greeks simples, PnL delta-hedgé, ratios).
+
+Mini-cas (2–5 écrans) : contexte → question → justification.
+
+Recognition : lire un payoff/diagramme, reconnaître un risque dominant.
+
+Sales Pitch : choisir le meilleur argument/angle pour un client type.
+
+Risk Desk : décision sous contrainte (hedge rapide, limite de temps).
+
+4.2 Difficulté
+
+Échelle 1–10, calibrée via temps moyen de réponse, taux de réussite, et contrecarrée par adaptive sampling (plus de questions aux frontières de compétence).
+
+5. Économie de jeu & Récompenses
+5.1 Ressources
+
+XP global : niveau de compte, déblocage de talents/cosmétiques.
+
+XP de compétence (par catégorie) : niveaux de maîtrise thématiques.
+
+Or : consommables (hints, rerolls), cosmétiques (zéro power creep).
+
+Réputation de guilde : accès boss, skins, épreuves avancées.
+
+Glyphes (consommables de run) : +1 reveal, +1 reroll, +10s timer.
+
+5.2 Distribution
+
+Bonne réponse : XP_global = 10 + (speed_bonus*4) + (floor(streak/5)*3)
+
+XP skill : 8 + (speed_bonus*3)
+
+Speed tiers : <3s = +2 ; <6s = +1 ; sinon 0.
+
+Streak : combo augmente tous les 3 (limité à ×5).
+
+5.3 Anti-abus
+
+Rendement décroissant des glyphes ; caps/journaliers ; variations de sets.
+
+6. Progression & Talents
+6.1 Courbe d’XP
+
+Global : xpNeeded(level) = floor(100 * level^1.35)
+
+Skill : même courbe, indépendante par catégorie.
+
+6.2 Arbre de talents (exemple minimal 3×3)
+
+Sales :
+
+Cold Open (+5% or si temps <3s)
+
+Objection Shield (1 reroll/5 Q)
+
+Closer (+1 XP global par bonne réponse)
+
+Risk :
+
+Quick Hedge (1 soft-fail/run sans casser streak)
+
+Greeks Whisper (1 hint proba/run)
+
+Stop-Loss Ritual (réduit pénalité de série à 0 sur 1 miss/run)
+
+Pricing :
+
+Snap Calc (+1s speed window)
+
+Surface Reader (révèle 1 mauvaise option aléatoire/run)
+
+Edge Finder (+2 XP skill/bonne réponse)
+
+Talents actifs limités par slots (ex. 2 actifs, 3 passifs).
+
+7. Quêtes, Boss & Saisons
+7.1 Quêtes
+
+Daily (3) : spécifiques (5 justes en Rates, Streak 3, 3 réponses <3s).
+
+Weekly (3) : volume & maîtrise (4 donjons Equity, 2 niveaux skill).
+
+Season (1+) : arc narratif macro (ex. cycle désinflation).
+
+7.2 Boss (mini-cas)
+
+5 questions séquencées ; temps global ; échec → récompense réduite.
+
+Drop d’artefact cosmétique + glyphe rare.
+
+7.3 Saisons (4–8 semaines)
+
+Nouveaux boss, “raids” simulés (CPI, FOMC, flash crash).
+
+Leaderboard opt-in (par guilde et global).
+
+8. UX/UI — Principes
+
+Toujours visible : lvl global, barre d’XP, skill courant, streak, or.
+
+Feedback : sons courts, confetti, labels +XP/+Or, micro-glow sur paliers.
+
+Lisibilité : temps restant clair, CTA “Suivant” explicite, affichage réponse/hint non intrusif.
+
+Rituels : pop de level-up (600–900ms), cérémonie talent, bilan de run.
+
+9. Mesure & Analytics
+9.1 KPIs
+
+Activation : Taux de fin du premier run, temps moyen premier run.
+
+Rétention : D1/D7/D28, streak users, quêtes complétées.
+
+Progression : XP/h, niveaux skill gagnés/semaine, % réussite par tag.
+
+Qualité contenu : difficulté observée vs cible, taux d’abandon par question.
+
+Économie : or gagné/dépensé, utilisation glyphes, drop rates perçus.
+
+9.2 Événements (schéma)
+
+RUN_START / RUN_END (region, subs, n, durées, xp, or, streak_max)
+
+QUESTION_ANSWERED (id, correct, time_ms, hint_used, reroll_used)
+
+QUEST_CLAIMED (id, rewards)
+
+TALENT_EQUIPPED / GLYPH_USED
+
+BOSS_START/END (succès, récomps)
+
+10. Modèle de données (MVP → scalable)
+10.1 Entités principales
+
+User { id, created_at, handle?, settings }
+
+Category { id, parent_id?, name, question_count }
+
+Question { id, category_id, type, prompt, choices?, answer, difficulty, tags[], explanation? }
+
+Run { id, user_id, started_at, ended_at, q_ids[], correct[], times_ms[], xp, gold, streak_max }
+
+Skill { user_id, cat_id, level, xp, next }
+
+QuestDef { id, scope: daily|weekly|season, rule_json, rewards }
+
+QuestProgress { user_id, quest_id, date_or_week, progress, claimed }
+
+Inventory { user_id, item_id, qty } (glyphes, cosmétiques)
+
+Talent { id, tree, type: passive|active, effect_json }
+
+UserTalent { user_id, talent_id, equipped: boolean }
+
+CodexCard { id, title, body, tags[] }
+
+UserCodex { user_id, card_id, obtained_at }
+
+10.2 Stockage
+
+Phase 0 (local-first) : localStorage (profile, daily).
+
+Phase 1 (cloud) : Postgres via Prisma/Supabase ; auth anonyme/email.
+
+11. Architecture & API
+11.1 Frontend
+
+Next.js (App Router), Tailwind v3, AudioContext pour SFX.
+
+State : React + local reducers pour run ; Sync profil local ↔ cloud.
+
+11.2 Backend (Phase 1+)
+
+Services :
+
+GET /api/categories
+
+GET /api/questions?category_id=&n= (sampling pondéré par difficulté)
+
+POST /api/run (résultats)
+
+GET/POST /api/quests (progress, claim)
+
+GET/POST /api/talents (equip/unequip)
+
+GET/POST /api/inventory (glyphes)
+
+GET /api/codex (cards débloquées)
+
+Rate limiting (IP/user), anti-triche basique (timestamps, server time).
+
+11.3 Pipeline contenu
+
+Source : CSV/JSON versionnés (git) → import DB.
+
+Validation : schéma strict (type, answer shape, tags obligatoires).
+
+QA : linter contenu (mots interdits, longueur, unicité), tests échantillonnage.
+
+12. Balance & Scoring
+12.1 Paramètres
+
+XP_PER_CORRECT = 10 ; XP_SKILL_PER_CORRECT = 8
+
+SPEED_T1 = 3000ms, SPEED_T2 = 6000ms
+
+MAX_COMBO = 5
+
+xpNeeded(level) = floor(100 * level^1.35)
+
+12.2 Ajustements dynamiques
+
+Adaptive sampling : plus de questions aux frontières (60–75% réussite).
+
+Decay soft : perks de run non cumulables entre runs, caps journaliers.
+
+Boss : Diminution de récompense si trop d’échecs consécutifs (mais jamais 0).
+
+13. Live-Ops & Social
+13.1 Saisons
+
+Thèmes macro (Inflation → Désinflation, Cycle de hausse → Pause).
+
+Rotation boss/donjons, mini-événements (CPI Day, Earnings Week).
+
+13.2 Social
+
+Leaderboards opt-in (global/guilde/semaine).
+
+Ghost runs (rejouer tempo d’un top joueur).
+
+Guild Wars : total XP par guilde chaque semaine (récompenses cosmétiques).
+
+14. Éthique, Accessibilité, Compliance
+14.1 Éthique dopamine
+
+Feedback fréquent mais bref ; échecs “soft” (streak réparable).
+
+Zéro pay-to-win ; cosmétiques ou qualité de vie uniquement.
+
+14.2 Accessibilité
+
+Couleurs > 4.5:1, support reduced-motion, keybindings (1–9, Entrée).
+
+Mode daltonien (toggle palettes), captions SFX.
+
+14.3 Données & sécurité
+
+GDPR-friendly (opt-in analytics, export/suppression).
+
+Protection basique contre scripts/abuse (rate limit, server-time checks).
+
+15. Qualité & Tests
+15.1 Tests
+
+Unitaires : parsers de questions, scoring, timers.
+
+E2E : run complet, boss flow, claim quêtes, talents équipés.
+
+Charge : sampling questions, sauvegardes runs, classements.
+
+15.2 Telemetry de qualité contenu
+
+Taux d’ambiguïté (réponses contestées), temps moyen par question, heatmaps d’erreurs par tag.
+
+16. Monétisation (optionnelle, non nécessaire au MVP)
+
+Cosmétiques (skins, auras, cartes animées).
+
+Pass saison gratuit + extension premium non-intrusive (cosmétique, codex illustré).
+
+Aucun avantage de performance durable.
+
+17. Glossaire minimal
+
+Glyphes : consommables de run (reveals, rerolls, temps).
+
+Codex : collection de cartes-savoir (rappel, mini-fiches).
+
+Boss : mini-cas en 5 questions, drop spécifique.
+
+Voies Sales/Risk/Pricing : branches de talents.
+
+18. Plan de livraison (cadre sans détails — la roadmap viendra ensuite)
+
+Sprint A — Core Loop : Map → Run → Scoring → Quêtes → Bilan.
+
+Sprint B — Talents & Glyphes : arbre 3×3, inventaire, slots.
+
+Sprint C — Boss & Codex : mini-cas, drops, révision.
+
+Sprint D — Saison & Social : thèmes, leaderboards opt-in.
+
+19. Annexes techniques (extraits)
+19.1 Schéma JSON Question (MCQ)
+{
+  "id": 123,
+  "category_id": 42,
+  "type": "MCQ",
+  "prompt": "Quel payoff correspond à un call spread 100/110 ?",
+  "choices": ["…", "…", "…", "…"],
+  "answer": 2,
+  "difficulty": 4,
+  "tags": ["equity","payoff"],
+  "explanation": "Différence de deux calls K1<K2…"
+}
+
+19.2 Effet de talent (exemple)
+{
+  "id": "pricing_snap_calc",
+  "tree": "pricing",
+  "type": "passive",
+  "effect": { "speed_window_bonus_ms": 1000 }
+}
+
+19.3 Contrat POST /api/run
+{
+  "user_id": "u_abc",
+  "region_id": 10,
+  "subcats": [11,12],
+  "questions": [1,2,3,4,5],
+  "answers": [true,false,true,true,false],
+  "times_ms": [1800,6200,2400,3100,5800],
+  "xp_global": 74,
+  "xp_skills": [{"cat":11,"xp":16},{"cat":12,"xp":8}],
+  "gold": 12,
+  "streak_max": 4
+}
+
+20. Conclusion
+
+Arcane Markets combine une boucle de jeu courte et addictive, une progression mesurable, et un univers distinctif. L’architecture est pensée “local-first” pour itérer vite, puis “cloud-ready” pour l’échelle, les saisons et le social. L’éthique anti-P2W, la lisibilité et les rituels de progression garantissent une expérience gratifiante et durable.
+
+Quand tu es prêt, on transforme ce whitepaper en roadmap avec tickets concrets (UX, modèle de données, endpoints, composants).

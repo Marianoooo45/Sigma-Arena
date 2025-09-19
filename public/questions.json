@@ -1,0 +1,17 @@
+[
+  {
+    "category": "Fixed Income/Rates (Swaps)",
+    "type": "MCQ",
+    "prompt": "Dans un swap fixe/variable, payer fixe protège contre…",
+    "choices": ["Baisse des taux","Hausse des taux","FX","Vol"],
+    "answer": 1,
+    "difficulty": 0.45
+  },
+  {
+    "category": "Equity/Black-Scholes",
+    "type": "short",
+    "prompt": "Explique le rôle de N(d1) dans le Delta d’un call euro.",
+    "answer": "Delta = N(d1), probabilité risque-neutre d’exercice en termes de quantité de sous-jacent.",
+    "difficulty": 0.5
+  }
+]
