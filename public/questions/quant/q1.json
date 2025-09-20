@@ -1,0 +1,107 @@
+{
+  "meta": { "biome": "quant", "level": "q1", "title": "VAR CAVERNS", "version": 1 },
+  "shuffle": true,
+  "questions": [
+    {
+      "id": "q1_01",
+      "type": "mcq",
+      "prompt": "Que mesure un 1-day 99% VaR ?",
+      "options": [
+        { "id": "a", "label": "La perte moyenne sur 1 jour", "explanation": "C’est l’ES (Expected Shortfall) qui mesure une moyenne en queue." },
+        { "id": "b", "label": "La pire perte possible sur 1 jour", "explanation": "Pas une borne absolue : 1% des cas peuvent être pires." },
+        { "id": "c", "label": "Un quantile de perte à 99% sur 1 jour", "correct": true, "explanation": "VaR = quantile (seuil) de la distribution des pertes." },
+        { "id": "d", "label": "La probabilité de perdre 1%", "explanation": "VaR n’est pas une probabilité." }
+      ]
+    },
+    {
+      "id": "q1_02",
+      "type": "numeric",
+      "prompt": "Portefeuille 100m, vol quotidienne 2% (Normal). Approximativement, quel est le 99% VaR 1-day ? (utilise 2.33σ)",
+      "units": "$m",
+      "range": [4.6, 4.7]
+    },
+    {
+      "id": "q1_03",
+      "type": "multi",
+      "prompt": "À propos de l’Expected Shortfall (ES) vs VaR : coche les affirmations justes.",
+      "options": [
+        { "id": "a", "label": "ES ≥ VaR pour un même niveau de confiance", "correct": true, "explanation": "ES est plus conservateur car il moyenne la queue au-delà du seuil VaR." },
+        { "id": "b", "label": "ES est subadditif (cohérent)", "correct": true, "explanation": "ES satisfait la cohérence ; VaR peut violer la subadditivité." },
+        { "id": "c", "label": "ES = VaR uniquement pour la loi normale", "explanation": "Faux : même sous Normal, ES > VaR (facteur ~2.665σ vs 2.33σ à 99%)." },
+        { "id": "d", "label": "VaR est toujours cohérent", "explanation": "Faux : la VaR peut ne pas être subadditive." }
+      ]
+    },
+    {
+      "id": "q1_04",
+      "type": "mcq",
+      "prompt": "Tu es long 1 call (Δ = +0.6). Pour être delta-neutre immédiatement, tu dois…",
+      "options": [
+        { "id": "a", "label": "Acheter 0.6 sous-jacent", "explanation": "Cela accroît ton delta net à +1.2." },
+        { "id": "b", "label": "Vendre 0.6 sous-jacent", "correct": true, "explanation": "Long call Δ=+0.6 ⇒ short 0.6 action neutralise Δ." },
+        { "id": "c", "label": "Vendre 1 action", "explanation": "Sur-couvre ; Δ net = −0.4." },
+        { "id": "d", "label": "Ne rien faire", "explanation": "Tu restes exposé au delta." }
+      ]
+    },
+    {
+      "id": "q1_05",
+      "type": "mcq",
+      "prompt": "Être short gamma implique typiquement que…",
+      "options": [
+        { "id": "a", "label": "Tu gagnes sur les grands mouvements", "explanation": "C’est l’inverse : short convexité perd sur les swings." },
+        { "id": "b", "label": "Tu achètes haut et vends bas en couverture", "correct": true, "explanation": "Short Γ ⇒ hedging pro-cyclique (perdant en volatilité réalisée élevée)." },
+        { "id": "c", "label": "Ta vega est toujours négative", "explanation": "Pas nécessairement lié." },
+        { "id": "d", "label": "Ton theta est toujours négatif", "explanation": "Short Γ s’accompagne souvent de +θ (time decay en ta faveur)." }
+      ]
+    },
+    {
+      "id": "q1_06",
+      "type": "mcq",
+      "prompt": "Toutes choses égales par ailleurs, si les corrélations entre actifs montent, alors le VaR de portefeuille…",
+      "options": [
+        { "id": "a", "label": "Baisse", "explanation": "Diversification diminue quand ρ augmente." },
+        { "id": "b", "label": "Reste inchangé", "explanation": "Au contraire, l’agrégation change." },
+        { "id": "c", "label": "Monte", "correct": true, "explanation": "Plus de co-mouvements ⇒ moins de diversification ⇒ VaR ↑." },
+        { "id": "d", "label": "Devient nul", "explanation": "Non." }
+      ]
+    },
+    {
+      "id": "q1_07",
+      "type": "multi",
+      "prompt": "Backtesting VaR 99% — coche ce qui est correct.",
+      "options": [
+        { "id": "a", "label": "On attend ~1% de jours avec exception", "correct": true, "explanation": "En moyenne, ~1 jour sur 100 dépasse la VaR." },
+        { "id": "b", "label": "Le test de Kupiec (UC) regarde le ratio d’échecs", "correct": true, "explanation": "UC = Unconditional Coverage (fréquence d’exceptions)." },
+        { "id": "c", "label": "Des exceptions clusterisées peuvent violer l’indépendance", "correct": true, "explanation": "Christoffersen (independence) traque l’auto-corrélation d’échecs." },
+        { "id": "d", "label": "Trop peu d’exceptions ⇒ modèle forcément valide", "explanation": "Peut indiquer une sur-conservativité/mauvais calibrage." }
+      ]
+    },
+    {
+      "id": "q1_08",
+      "type": "mcq",
+      "prompt": "Quelle propriété caractérise le VaR historique vs paramétrique (Normal) ?",
+      "options": [
+        { "id": "a", "label": "Le VaR historique capte mieux les queues/fat-tails", "correct": true, "explanation": "Il rééchantillonne l’empirique sans hypothèse gaussienne." },
+        { "id": "b", "label": "Le paramétrique ne dépend pas de la volatilité", "explanation": "Il est justement fonction de σ et ρ." },
+        { "id": "c", "label": "Le VaR historique nécessite un modèle GARCH", "explanation": "Pas requis (peut être ajouté, mais pas intrinsèque)." },
+        { "id": "d", "label": "Les deux donnent toujours le même résultat", "explanation": "Souvent différents en queues." }
+      ]
+    },
+    {
+      "id": "q1_09",
+      "type": "mcq",
+      "prompt": "En PCA des taux, le 1er composant (PC1) est généralement interprété comme…",
+      "options": [
+        { "id": "a", "label": "Une torsion (twist) de courbe" },
+        { "id": "b", "label": "Un bombement (butterfly)" },
+        { "id": "c", "label": "Un déplacement parallèle (level)", "correct": true, "explanation": "PC1 ≈ level; PC2 ≈ slope; PC3 ≈ curvature." },
+        { "id": "d", "label": "Du bruit blanc" }
+      ]
+    },
+    {
+      "id": "q1_10",
+      "type": "open",
+      "prompt": "Décris un pipeline de Monte-Carlo VaR réaliste pour un book d’options multi-actifs.",
+      "rubric": "Attendu : génération de facteurs (corrélés), dynamique (GBM/GARCH/LocalVol), simulation de trajectoires, re-valorisation complète (greeks ou full reprice), agrégation P&L, extraction du quantile, diagnostics (stabilité, seeds), et backtest."
+    }
+  ]
+}

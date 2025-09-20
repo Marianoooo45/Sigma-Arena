@@ -1,7 +1,10 @@
+// app/play/biome/credit/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import BackToMapButton from "@/components/BackToMapButton";
+import { Progress } from "@/lib/progress";
 
 const TOPBAR = 64;
 
@@ -12,19 +15,25 @@ const THEME = {
   edge: "#e9d5ff",
 };
 
-type Level = { id: string; title: string; subtitle: string; diff: number; locked?: boolean };
+type Level = { id: string; title: string; subtitle: string; diff: number };
 
 const LEVELS: Level[] = [
   { id: "c1", title: "LEVEL 1: SPREAD FOUNDATIONS",  subtitle: "IG vs HY • OAS • beta",        diff: 15 },
-  { id: "c2", title: "LEVEL 2: DEFAULT DUNGEON",              subtitle: "Ratings • fallen angels",      diff: 25, locked: true },
-  { id: "c3", title: "LEVEL 3: RECOVERY CATACOMBS",           subtitle: "Event risk • distressed debt", diff: 35, locked: true },
-  { id: "c4", title: "LEVEL 4: TRANCHE TOWER",                subtitle: "CDOs • mezz vs equity slice",  diff: 45, locked: true },
-  { id: "c5", title: "LEVEL 5: ELDER CREDIT SHRINE",          subtitle: "Correlation collapse boss",    diff: 55, locked: true },
+  { id: "c2", title: "LEVEL 2: DEFAULT DUNGEON",     subtitle: "Ratings • fallen angels",      diff: 25 },
+  { id: "c3", title: "LEVEL 3: RECOVERY CATACOMBS",  subtitle: "Event risk • distressed debt", diff: 35 },
+  { id: "c4", title: "LEVEL 4: TRANCHE TOWER",       subtitle: "CDOs • mezz vs equity slice",  diff: 45 },
+  { id: "c5", title: "LEVEL 5: ELDER CREDIT SHRINE", subtitle: "Correlation collapse boss",    diff: 55 },
 ];
 
+const ORDER = LEVELS.map(l => l.id);
 
 export default function CreditDungeon() {
-  const [selected, setSelected] = useState<string | null>(null);
+  const router = useRouter();
+
+  // 1er niveau jouable par défaut (en fonction de la progression)
+  const [selected, setSelected] = useState<string>(() =>
+    Progress.firstPlayable("credit", ORDER)
+  );
   const selLevel = useMemo(() => LEVELS.find(l => l.id === selected) ?? null, [selected]);
 
   // Bloque le scroll en arrière-plan
@@ -36,6 +45,22 @@ export default function CreditDungeon() {
     return () => {
       document.body.style.overflow = prevOv;
       (document.body.style as any).overscrollBehaviorY = prevOs;
+    };
+  }, []);
+
+  // Re-sync quand la progression change (autre onglet / fin de niveau)
+  useEffect(() => {
+    const sync = () =>
+      setSelected(prev =>
+        Progress.isUnlocked("credit", ORDER, prev)
+          ? prev
+          : Progress.firstPlayable("credit", ORDER)
+      );
+    window.addEventListener("storage", sync);
+    window.addEventListener("sigma:progresschange", sync as any);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("sigma:progresschange", sync as any);
     };
   }, []);
 
@@ -54,6 +79,11 @@ export default function CreditDungeon() {
       }
     } catch {}
   }, []);
+
+  const startSelected = () => {
+    if (!selLevel) return;
+    router.push(`/play/biome/credit/level/${selLevel.id}`);
+  };
 
   return (
     <div className="fixed inset-0 overflow-hidden" style={{ ["--topbar" as any]: `${TOPBAR}px` }}>
@@ -99,17 +129,18 @@ export default function CreditDungeon() {
           <div className="w-[min(680px,92%)] space-y-2 sm:space-y-3">
             {LEVELS.map((lvl) => {
               const isSel = selected === lvl.id;
-              const isLocked = !!lvl.locked;
+              const isUnlocked = Progress.isUnlocked("credit", ORDER, lvl.id);
+              const isCleared = Progress.isCleared("credit", lvl.id);
               return (
                 <button
                   key={lvl.id}
-                  disabled={isLocked}
-                  onClick={() => setSelected(lvl.id)}
+                  disabled={!isUnlocked}
+                  onClick={() => isUnlocked && setSelected(lvl.id)}
                   className={[
                     "group w-full text-left rounded-2xl px-4 sm:px-5 py-3 relative overflow-hidden",
                     "border transition-all duration-200",
                     "backdrop-blur bg-[rgba(14,10,22,.55)] hover:bg-[rgba(18,12,28,.66)]",
-                    isLocked ? "opacity-60 cursor-not-allowed" : "hover:translate-y-[-2px]",
+                    !isUnlocked ? "opacity-60 cursor-not-allowed" : "hover:translate-y-[-2px)",
                   ].join(" ")}
                   style={{
                     borderColor: isSel ? THEME.glow : "color-mix(in srgb, var(--gx-line) 82%, transparent)",
@@ -127,14 +158,16 @@ export default function CreditDungeon() {
                     }}
                   />
                   <div className="flex items-center gap-4">
-                    <LevelShield active={isSel} locked={isLocked} color={THEME.glow} />
+                    <LevelShield active={isSel} locked={!isUnlocked} color={THEME.glow} />
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold tracking-wide truncate">{lvl.title}</div>
+                      <div className="font-semibold tracking-wide truncate">
+                        {lvl.title} {isCleared && <span className="ml-2 text-[10px] align-super text-gold/80">CLEARED</span>}
+                      </div>
                       <div className="text-xs mt-1 opacity-80 text-[var(--gx-muted)] truncate">
                         {lvl.subtitle} • <span className="text-gold">&ge; diff {lvl.diff}</span>
                       </div>
                     </div>
-                    {!isLocked ? (
+                    {isUnlocked ? (
                       <span className="text-xs px-2 py-1 rounded-md border"
                             style={{ borderColor: THEME.glowDim, color: THEME.glow }}>
                         Enter
@@ -156,7 +189,7 @@ export default function CreditDungeon() {
             <button
               className="btn-cta"
               disabled={!selLevel}
-              onClick={() => console.log("Start level:", selLevel?.id)}
+              onClick={startSelected}
               style={{ ["--ctaGlow" as any]: THEME.glow, ["--ctaGlowDim" as any]: THEME.glowDim }}
             >
               {selLevel ? `START • ${selLevel.title}` : "SELECT LEVEL"}

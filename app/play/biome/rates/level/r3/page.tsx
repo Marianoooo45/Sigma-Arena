@@ -1,9 +1,9 @@
-// app/play/biome/rates/level/r1/page.tsx
+// app/play/biome/rates/level/r3/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import BackToMapButton from "@/components/BackToMapButton";
-import { fetchQuestionSet, type Question, type MCQ, type Multi, type Numeric, type Open } from "@/lib/question_bank";
+import { fetchQuestionSet, type Question, type MCQ, type Multi, type Numeric } from "@/lib/question_bank";
 import { Progress } from "@/lib/progress";
 import { useRouter } from "next/navigation";
 
@@ -22,7 +22,7 @@ type PickState =
 
 type Eval = { correct: boolean; msg?: string; neutral?: boolean };
 
-export default function RatesLevelR1() {
+export default function RatesLevelR3() {
   const router = useRouter();
 
   // FX arrivée depuis la map
@@ -48,7 +48,7 @@ export default function RatesLevelR1() {
 
   useEffect(() => {
     setLoading(true);
-    fetchQuestionSet("rates", "r1", true)
+    fetchQuestionSet("rates", "r3", true)
       .then((qs) => {
         setQuestions(qs.questions);
         setLoading(false);
@@ -186,16 +186,16 @@ export default function RatesLevelR1() {
     const pass = total > 0 ? (score / total) >= 0.8 : false;
 
     if (pass) {
-      try { Progress.markCleared("rates", "r1"); } catch {}
+      try { Progress.markCleared("rates", "r3"); } catch {}
     }
-    // Ping UI (deux canaux)
+    // Ping UI
     try { window.dispatchEvent(new Event("sigma:progresschange")); } catch {}
     try { localStorage.setItem("sigma:progress:pulse", String(Date.now())); } catch {}
 
     router.replace("/play/biome/rates");
   }
 
-  const headerTitle = "RATES • LEVEL 1";
+  const headerTitle = "RATES • LEVEL 3";
   const progressPill = `${Math.min(idx + 1, total || 1)} / ${total || 1}`;
   const scorePill = `${score} / ${total || 1}`;
 
@@ -302,7 +302,7 @@ export default function RatesLevelR1() {
           box-shadow:
             0 0 0 3px color-mix(in srgb, var(--ring) 32%, transparent) inset,
             0 12px 30px rgba(0,0,0,.35),
-            0 0 28px var(--ringDim);
+            0 0 28px ${THEME.glowDim};
           transition: transform .15s ease, filter .2s ease, box-shadow .2s ease;
           overflow: hidden;
           isolation: isolate;
@@ -417,7 +417,6 @@ function QuestionCard({
   };
   const markOpenWrong = () => {
     setOpenCredited(false);
-    // (si tu veux autoriser de retirer un point après l'avoir ajouté, gère un state pour le faire - ici on ne remet pas le score en arrière)
   };
 
   return (
@@ -438,8 +437,8 @@ function QuestionCard({
         <div className="flex items-center gap-3">
           <Shield color={theme.glow} />
           <div>
-            <div className="font-extrabold tracking-wide" style={{ color: theme.glow }}>LEVEL 1 • RATES</div>
-            <div className="text-[13px] text-[var(--gx-muted)]">Bond foundations</div>
+            <div className="font-extrabold tracking-wide" style={{ color: theme.glow }}>LEVEL 3 • RATES</div>
+            <div className="text-[13px] text-[var(--gx-muted)]">DV01 storms & hedges</div>
           </div>
         </div>
         <div
@@ -505,10 +504,7 @@ function QuestionCard({
       {q.type === "open" && revealed && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <span className="text-xs text-[var(--gx-muted)]">Self-check:</span>
-          <button
-            className="btn-gold"
-            onClick={markOpenCorrect}
-          >
+          <button className="btn-gold" onClick={markOpenCorrect}>
             <span className="shine" />
             I was correct
           </button>

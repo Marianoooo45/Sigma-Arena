@@ -26,6 +26,14 @@ const LEVELS: Level[] = [
 
 const ORDER = LEVELS.map(l => l.id);
 
+/* --------- "NEW" state helpers (local only) --------- */
+function hasPlayed(levelId: string) {
+  try { return localStorage.getItem(`played-rates-${levelId}`) === "1"; } catch { return false; }
+}
+function markPlayed(levelId: string) {
+  try { localStorage.setItem(`played-rates-${levelId}`, "1"); } catch {}
+}
+
 export default function RatesDungeon() {
   const router = useRouter();
 
@@ -84,6 +92,8 @@ export default function RatesDungeon() {
 
   const startSelected = () => {
     if (!selLevel) return;
+    // Dès qu’on entre dans un niveau, il n’est plus NEW
+    markPlayed(selLevel.id);
     router.push(`/play/biome/rates/level/${selLevel.id}`);
   };
 
@@ -133,59 +143,77 @@ export default function RatesDungeon() {
           <div className="w-[min(680px,92%)] space-y-2 sm:space-y-3">
             {LEVELS.map((lvl) => {
               const isSel = selected === lvl.id;
-              const isUnlocked = Progress.isUnlocked("rates", ORDER, lvl.id);
-              const isCleared = Progress.isCleared("rates", lvl.id);
+              const unlocked = Progress.isUnlocked("rates", ORDER, lvl.id);
+              const cleared = Progress.isCleared("rates", lvl.id);
+              const showNew = unlocked && !cleared && !hasPlayed(lvl.id); // NEW si débloqué, pas clear, pas encore joué
+
               return (
-                <button
-                  key={lvl.id}
-                  disabled={!isUnlocked}
-                  onClick={() => isUnlocked && setSelected(lvl.id)}
-                  className={[
-                    "group w-full text-left rounded-2xl px-4 sm:px-5 py-3 relative overflow-hidden",
-                    "border transition-all duration-200",
-                    "backdrop-blur bg-[rgba(24,16,8,.55)] hover:bg-[rgba(28,18,10,.66)]",
-                    !isUnlocked ? "opacity-60 cursor-not-allowed" : "hover:translate-y-[-2px]",
-                  ].join(" ")}
-                  style={{
-                    borderColor: isSel ? THEME.glow : "color-mix(in srgb, var(--gx-line) 82%, transparent)",
-                    boxShadow: isSel
-                      ? `0 0 0 1px ${THEME.glowDim} inset, 0 0 18px ${THEME.glowDim}`
-                      : "var(--gx-inner), 0 8px 24px rgba(0,0,0,.35)",
-                  }}
-                >
-                  {/* Halo sous la carte */}
-                  <span
-                    className="absolute inset-0 rounded-2xl -z-10 opacity-70"
+                <div key={lvl.id} className="relative">
+                  {/* Badge NEW au-dessus de la box */}
+                  {showNew && (
+                    <span
+                      className="absolute -top-2 right-3 z-10 px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wider goldNew"
+                      style={{ color: "#2b1906" }}
+                    >
+                      NEW
+                    </span>
+                  )}
+
+                  <button
+                    disabled={!unlocked}
+                    onClick={() => unlocked && setSelected(lvl.id)}
+                    className={[
+                      "group w-full text-left rounded-2xl px-4 sm:px-5 py-3 relative overflow-hidden",
+                      "border transition-all duration-200",
+                      "backdrop-blur bg-[rgba(24,16,8,.55)] hover:bg-[rgba(28,18,10,.66)]",
+                      !unlocked ? "opacity-60 cursor-not-allowed" : "hover:translate-y-[-2px]",
+                    ].join(" ")}
                     style={{
-                      background: `radial-gradient(90% 50% at 50% 120%, ${THEME.glowDim}, transparent 70%)`,
-                      filter: "blur(10px)",
+                      borderColor: isSel ? THEME.glow : "color-mix(in srgb, var(--gx-line) 82%, transparent)",
+                      boxShadow: isSel
+                        ? `0 0 0 1px ${THEME.glowDim} inset, 0 0 18px ${THEME.glowDim}`
+                        : "var(--gx-inner), 0 8px 24px rgba(0,0,0,.35)",
                     }}
-                  />
+                  >
+                    {/* Halo sous la carte */}
+                    <span
+                      className="absolute inset-0 rounded-2xl -z-10 opacity-70"
+                      style={{
+                        background: `radial-gradient(90% 50% at 50% 120%, ${THEME.glowDim}, transparent 70%)`,
+                        filter: "blur(10px)",
+                      }}
+                    />
 
-                  <div className="flex items-center gap-4">
-                    <LevelShield active={isSel} locked={!isUnlocked} color={THEME.glow} />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold tracking-wide truncate">
-                        {lvl.title} {isCleared && <span className="ml-2 text-[10px] align-super text-gold/80">CLEARED</span>}
+                    <div className="flex items-center gap-4">
+                      <LevelShield active={isSel} locked={!unlocked} color={THEME.glow} />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold tracking-wide truncate">
+                          {lvl.title}
+                          {cleared && (
+                            <span className="ml-2 text-[10px] align-super text-gold/80">CLEARED</span>
+                          )}
+                        </div>
+                        <div className="text-xs mt-1 opacity-80 text-[var(--gx-muted)] truncate">
+                          {lvl.subtitle} • <span className="text-gold">&ge; diff {lvl.diff}</span>
+                        </div>
                       </div>
-                      <div className="text-xs mt-1 opacity-80 text-[var(--gx-muted)] truncate">
-                        {lvl.subtitle} • <span className="text-gold">&ge; diff {lvl.diff}</span>
-                      </div>
+                      {unlocked ? (
+                        <span
+                          className="text-xs px-2 py-1 rounded-md border"
+                          style={{ borderColor: THEME.glowDim, color: THEME.glow }}
+                        >
+                          Enter
+                        </span>
+                      ) : (
+                        <span className="text-xs px-2 py-1 rounded-md border border-[color-mix(in_srgb,var(--gx-line)_80%,transparent)]">
+                          Locked
+                        </span>
+                      )}
                     </div>
-                    {isUnlocked ? (
-                      <span className="text-xs px-2 py-1 rounded-md border"
-                            style={{ borderColor: THEME.glowDim, color: THEME.glow }}>
-                        Enter
-                      </span>
-                    ) : (
-                      <span className="text-xs px-2 py-1 rounded-md border border-[color-mix(in_srgb,var(--gx-line)_80%,transparent)]">
-                        Locked
-                      </span>
-                    )}
-                  </div>
 
-                  <Ripple ambient color={THEME.glow} />
-                </button>
+                    <Ripple ambient color={THEME.glow} />
+                  </button>
+                </div>
               );
             })}
           </div>
@@ -304,6 +332,25 @@ export default function RatesDungeon() {
         @keyframes aFlash{ 0%{opacity:0} 20%{opacity:1} 100%{opacity:0} }
         @keyframes aRing{ 0%{transform:translate(-50%,-50%) scale(.6); opacity:0} 40%{opacity:1} 100%{transform:translate(-50%,-50%) scale(6); opacity:0} }
         @keyframes aDust{ 0%{opacity:0} 40%{opacity:.6} 100%{opacity:0} }
+
+        /* === NEW badge gold === */
+        .goldNew{
+          background: linear-gradient(90deg, ${THEME.glow}, #ffe7a4);
+          border: 1px solid color-mix(in srgb, ${THEME.glow} 55%, transparent);
+          box-shadow:
+            0 4px 14px rgba(0,0,0,.35),
+            0 0 16px ${THEME.glowDim};
+          letter-spacing: .6px;
+          animation: badgeFloat 2.4s ease-in-out infinite, badgeTwinkle 4s ease-in-out infinite;
+        }
+        @keyframes badgeFloat{
+          0%,100%{ transform: translateY(-1px); }
+          50%{ transform: translateY(2px); }
+        }
+        @keyframes badgeTwinkle{
+          0%,100%{ filter: brightness(1); }
+          50%{ filter: brightness(1.06); }
+        }
       `}</style>
     </div>
   );

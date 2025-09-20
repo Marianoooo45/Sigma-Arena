@@ -1,7 +1,10 @@
+// app/play/biome/equity/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import BackToMapButton from "@/components/BackToMapButton";
+import { Progress } from "@/lib/progress";
 
 const TOPBAR = 64;
 
@@ -12,19 +15,51 @@ const THEME = {
   edge: "#ffd0d5",                // liseré clair
 };
 
-type Level = { id: string; title: string; subtitle: string; diff: number; locked?: boolean };
+type Level = { id: string; title: string; subtitle: string; diff: number };
 
 const LEVELS: Level[] = [
-  { id: "e1", title: "LEVEL 1: PRICE ACTION FORGE",    subtitle: "Momentum vs mean-reversion",   diff: 15},
-  { id: "e2", title: "LEVEL 2: FACTOR ARENA",                   subtitle: "Value • Quality • Size mix",    diff: 25, locked: true },
-  { id: "e3", title: "LEVEL 3: MICROSTRUCTURE DEPTHS",          subtitle: "Spread • slippage • impact",    diff: 35, locked: true },
-  { id: "e4", title: "LEVEL 4: EARNINGS GAUNTLET",              subtitle: "Gaps • post-earnings drift",    diff: 45, locked: true },
-  { id: "e5", title: "LEVEL 5: ELDER ALPHA SHRINE",             subtitle: "Perfect run required",           diff: 55, locked: true },
+  { id: "e1", title: "LEVEL 1: PRICE ACTION FORGE",   subtitle: "Momentum vs mean-reversion", diff: 15 },
+  { id: "e2", title: "LEVEL 2: FACTOR ARENA",         subtitle: "Value • Quality • Size mix", diff: 25 },
+  { id: "e3", title: "LEVEL 3: MICROSTRUCTURE DEPTHS",subtitle: "Spread • slippage • impact", diff: 35 },
+  { id: "e4", title: "LEVEL 4: EARNINGS GAUNTLET",    subtitle: "Gaps • post-earnings drift", diff: 45 },
+  { id: "e5", title: "LEVEL 5: ELDER ALPHA SHRINE",   subtitle: "Perfect run required",       diff: 55 },
 ];
 
+const ORDER = LEVELS.map(l => l.id);
+
+/* ---------- petite persistance locale pour savoir si un level a été "essayé" (pour le badge NEW) ---------- */
+const ENTER_KEY = "sigma_entered_v1";
+type EnterStore = Record<string /*biome*/, string[] /*entered level ids*/>;
+
+function readEntered(): EnterStore {
+  try { return JSON.parse(localStorage.getItem(ENTER_KEY) || "{}"); }
+  catch { return {}; }
+}
+function writeEntered(s: EnterStore) {
+  localStorage.setItem(ENTER_KEY, JSON.stringify(s));
+}
+function hasEntered(biome: string, levelId: string) {
+  const s = readEntered();
+  return !!s[biome]?.includes(levelId);
+}
+function markEntered(biome: string, levelId: string) {
+  const s = readEntered();
+  const arr = (s[biome] ||= []);
+  if (!arr.includes(levelId)) arr.push(levelId);
+  writeEntered(s);
+}
+
 export default function EquityDungeon() {
-  const [selected, setSelected] = useState<string | null>(null);
-  const selLevel = useMemo(() => LEVELS.find(l => l.id === selected) ?? null, [selected]);
+  const router = useRouter();
+
+  // Sélection par défaut = 1er niveau jouable
+  const [selected, setSelected] = useState<string>(() =>
+    Progress.firstPlayable("equity", ORDER)
+  );
+  const selLevel = useMemo(
+    () => LEVELS.find(l => l.id === selected) ?? null,
+    [selected]
+  );
 
   // Empêche le scroll derrière
   useEffect(() => {
@@ -35,6 +70,22 @@ export default function EquityDungeon() {
     return () => {
       document.body.style.overflow = prevOv;
       (document.body.style as any).overscrollBehaviorY = prevOs;
+    };
+  }, []);
+
+  // Re-sync quand la progression change (autre onglet / fin d'un niveau)
+  useEffect(() => {
+    const sync = () =>
+      setSelected(prev =>
+        Progress.isUnlocked("equity", ORDER, prev)
+          ? prev
+          : Progress.firstPlayable("equity", ORDER)
+      );
+    window.addEventListener("storage", sync);
+    window.addEventListener("sigma:progresschange", sync as any);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("sigma:progresschange", sync as any);
     };
   }, []);
 
@@ -53,6 +104,13 @@ export default function EquityDungeon() {
       }
     } catch {}
   }, []);
+
+  const startSelected = () => {
+    if (!selLevel) return;
+    // on marque "entered" pour retirer le badge NEW
+    markEntered("equity", selLevel.id);
+    router.push(`/play/biome/equity/level/${selLevel.id}`);
+  };
 
   return (
     <div className="fixed inset-0 overflow-hidden" style={{ ["--topbar" as any]: `${TOPBAR}px` }}>
@@ -98,55 +156,77 @@ export default function EquityDungeon() {
           <div className="w-[min(680px,92%)] space-y-2 sm:space-y-3">
             {LEVELS.map((lvl) => {
               const isSel = selected === lvl.id;
-              const isLocked = !!lvl.locked;
-              return (
-                <button
-                  key={lvl.id}
-                  disabled={isLocked}
-                  onClick={() => setSelected(lvl.id)}
-                  className={[
-                    "group w-full text-left rounded-2xl px-4 sm:px-5 py-3 relative overflow-hidden",
-                    "border transition-all duration-200",
-                    "backdrop-blur bg-[rgba(20,10,10,.52)] hover:bg-[rgba(26,12,12,.62)]",
-                    isLocked ? "opacity-60 cursor-not-allowed" : "hover:translate-y-[-2px]",
-                  ].join(" ")}
-                  style={{
-                    borderColor: isSel ? THEME.glow : "color-mix(in srgb, var(--gx-line) 82%, transparent)",
-                    boxShadow: isSel
-                      ? `0 0 0 1px ${THEME.glowDim} inset, 0 0 18px ${THEME.glowDim}`
-                      : "var(--gx-inner), 0 8px 24px rgba(0,0,0,.35)",
-                  }}
-                >
-                  {/* halo sous la carte */}
-                  <span
-                    className="absolute inset-0 rounded-2xl -z-10 opacity-70"
-                    style={{
-                      background: `radial-gradient(90% 50% at 50% 120%, ${THEME.glowDim}, transparent 70%)`,
-                      filter: "blur(10px)",
-                    }}
-                  />
-                  <div className="flex items-center gap-4">
-                    <LevelShield active={isSel} locked={isLocked} color={THEME.glow} />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold tracking-wide truncate">{lvl.title}</div>
-                      <div className="text-xs mt-1 opacity-80 text-[var(--gx-muted)] truncate">
-                        {lvl.subtitle} • <span className="text-gold">&ge; diff {lvl.diff}</span>
-                      </div>
-                    </div>
-                    {!isLocked ? (
-                      <span className="text-xs px-2 py-1 rounded-md border"
-                            style={{ borderColor: THEME.glowDim, color: THEME.glow }}>
-                        Enter
-                      </span>
-                    ) : (
-                      <span className="text-xs px-2 py-1 rounded-md border border-[color-mix(in_srgb,var(--gx-line)_80%,transparent)]">
-                        Locked
-                      </span>
-                    )}
-                  </div>
+              const isUnlocked = Progress.isUnlocked("equity", ORDER, lvl.id);
+              const isCleared = Progress.isCleared("equity", lvl.id);
+              const showNew = isUnlocked && !isCleared && !hasEntered("equity", lvl.id);
 
-                  <Ripple ambient color={THEME.glow} />
-                </button>
+              return (
+                <div key={lvl.id} className="relative">
+                  {/* Badge NEW rouge au-dessus de la box */}
+                  {showNew && (
+                    <span
+                      className="absolute -top-2 left-4 z-10 px-2 py-0.5 rounded-md text-[10px] font-black tracking-widest uppercase"
+                      style={{
+                        color: "#20080a",
+                        background: `linear-gradient(90deg, ${THEME.glow}, ${THEME.edge})`,
+                        border: `1px solid ${THEME.glowDim}`,
+                        boxShadow: `0 0 14px ${THEME.glowDim}`,
+                        letterSpacing: "1.3px",
+                      }}
+                    >
+                      NEW
+                    </span>
+                  )}
+
+                  <button
+                    disabled={!isUnlocked}
+                    onClick={() => isUnlocked && setSelected(lvl.id)}
+                    className={[
+                      "group w-full text-left rounded-2xl px-4 sm:px-5 py-3 relative overflow-hidden",
+                      "border transition-all duration-200",
+                      "backdrop-blur bg-[rgba(20,10,10,.52)] hover:bg-[rgba(26,12,12,.62)]",
+                      !isUnlocked ? "opacity-60 cursor-not-allowed" : "hover:translate-y-[-2px]",
+                    ].join(" ")}
+                    style={{
+                      borderColor: isSel ? THEME.glow : "color-mix(in srgb, var(--gx-line) 82%, transparent)",
+                      boxShadow: isSel
+                        ? `0 0 0 1px ${THEME.glowDim} inset, 0 0 18px ${THEME.glowDim}`
+                        : "var(--gx-inner), 0 8px 24px rgba(0,0,0,.35)",
+                    }}
+                  >
+                    {/* halo sous la carte */}
+                    <span
+                      className="absolute inset-0 rounded-2xl -z-10 opacity-70"
+                      style={{
+                        background: `radial-gradient(90% 50% at 50% 120%, ${THEME.glowDim}, transparent 70%)`,
+                        filter: "blur(10px)",
+                      }}
+                    />
+                    <div className="flex items-center gap-4">
+                      <LevelShield active={isSel} locked={!isUnlocked} color={THEME.glow} />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold tracking-wide truncate">
+                          {lvl.title} {isCleared && <span className="ml-2 text-[10px] align-super text-gold/80">CLEARED</span>}
+                        </div>
+                        <div className="text-xs mt-1 opacity-80 text-[var(--gx-muted)] truncate">
+                          {lvl.subtitle} • <span className="text-gold">&ge; diff {lvl.diff}</span>
+                        </div>
+                      </div>
+                      {isUnlocked ? (
+                        <span className="text-xs px-2 py-1 rounded-md border"
+                              style={{ borderColor: THEME.glowDim, color: THEME.glow }}>
+                          Enter
+                        </span>
+                      ) : (
+                        <span className="text-xs px-2 py-1 rounded-md border border-[color-mix(in_srgb,var(--gx-line)_80%,transparent)]">
+                          Locked
+                        </span>
+                      )}
+                    </div>
+
+                    <Ripple ambient color={THEME.glow} />
+                  </button>
+                </div>
               );
             })}
           </div>
@@ -156,7 +236,7 @@ export default function EquityDungeon() {
             <button
               className="btn-cta"
               disabled={!selLevel}
-              onClick={() => console.log("Start level:", selLevel?.id)}
+              onClick={startSelected}
               style={{ ["--ctaGlow" as any]: THEME.glow, ["--ctaGlowDim" as any]: THEME.glowDim }}
             >
               {selLevel ? `START • ${selLevel.title}` : "SELECT LEVEL"}

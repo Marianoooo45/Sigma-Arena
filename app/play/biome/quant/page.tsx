@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import BackToMapButton from "@/components/BackToMapButton";
 
 /* ========= THEME ========= */
@@ -8,7 +9,7 @@ const TOPBAR = 64;
 const THEME = {
   glow: "rgba(39,226,138,1)",
   glowSoft: "rgba(39,226,138,.55)",
-  glowDim: "rgba(39,226,138,.22)",
+  glowDim: "rgba(39,226,138,.22)"
 };
 
 type Level = { id: string; title: string; subtitle: string; diff: number; locked?: boolean };
@@ -16,12 +17,18 @@ type Level = { id: string; title: string; subtitle: string; diff: number; locked
 const LEVELS: Level[] = [
   { id: "q1", title: "LEVEL 1: VAR CAVERNS",      subtitle: "Shadows of Value-at-Risk",    diff: 15 },
   { id: "q2", title: "LEVEL 2: GREEK LABYRINTH",  subtitle: "Delta, Gamma, Vega traps",    diff: 25, locked: true },
-  { id: "q3", title: "LEVEL 3: MONTE CARLO CATACOMBS",     subtitle: "Stochastic beasts ahead",     diff: 35, locked: true },
-  { id: "q4", title: "LEVEL 4: BLACK-SCHOLES ABYSS",       subtitle: "Volatility storm bossfight",  diff: 45, locked: true },
-  { id: "q5", title: "LEVEL 5: ELDER HEDGE SHRINE",        subtitle: "Only perfect risk control",   diff: 55, locked: true },
+  { id: "q3", title: "LEVEL 3: MONTE CARLO CATACOMBS", subtitle: "Stochastic beasts ahead", diff: 35, locked: true },
+  { id: "q4", title: "LEVEL 4: BLACK-SCHOLES ABYSS",   subtitle: "Volatility storm bossfight",  diff: 45, locked: true },
+  { id: "q5", title: "LEVEL 5: ELDER HEDGE SHRINE",    subtitle: "Only perfect risk control",   diff: 55, locked: true }
 ];
 
+/* Map niveau -> route (L1 dispo) */
+const LEVEL_ROUTES: Record<string, string> = {
+  q1: "/play/biome/quant/level/q1"
+};
+
 export default function CrossAssetDungeon() {
+  const router = useRouter();
   const [selected, setSelected] = useState<string | null>(null);
   const selLevel = useMemo(() => LEVELS.find(l => l.id === selected) ?? null, [selected]);
 
@@ -37,7 +44,7 @@ export default function CrossAssetDungeon() {
     };
   }, []);
 
-  /* ===== Arrival si la map a posé sessionStorage.warp ===== */
+  /* Arrival si la map a posé sessionStorage.warp */
   const [arrival, setArrival] = useState<string | null>(null);
   useEffect(() => {
     try {
@@ -51,6 +58,14 @@ export default function CrossAssetDungeon() {
       }
     } catch {}
   }, []);
+
+  const handleStart = () => {
+    if (!selLevel) return;
+    const route = LEVEL_ROUTES[selLevel.id];
+    if (!route) return;
+    try { sessionStorage.setItem("warp", JSON.stringify({ ts: Date.now(), tint: THEME.glow })); } catch {}
+    router.push(route);
+  };
 
   return (
     <div className="fixed inset-0 overflow-hidden" style={{ ["--topbar" as any]: `${TOPBAR}px` }}>
@@ -106,23 +121,22 @@ export default function CrossAssetDungeon() {
                     "group w-full text-left rounded-2xl px-4 sm:px-5 py-3 relative overflow-hidden",
                     "border transition-all duration-200",
                     "backdrop-blur bg-[rgba(8,16,14,.55)] hover:bg-[rgba(10,24,18,.66)]",
-                    isLocked ? "opacity-60 cursor-not-allowed" : "hover:translate-y-[-2px]",
+                    isLocked ? "opacity-60 cursor-not-allowed" : "hover:translate-y-[-2px]"
                   ].join(" ")}
                   style={{
                     borderColor: isSel ? THEME.glow : "color-mix(in srgb, var(--gx-line) 82%, transparent)",
                     boxShadow: isSel
                       ? `0 0 0 1px ${THEME.glowDim} inset, 0 0 18px ${THEME.glowDim}`
-                      : "var(--gx-inner), 0 8px 24px rgba(0,0,0,.35)",
+                      : "var(--gx-inner), 0 8px 24px rgba(0,0,0,.35)"
                   }}
                 >
                   <span
                     className="absolute inset-0 rounded-2xl -z-10 opacity-70"
                     style={{
                       background: `radial-gradient(90% 50% at 50% 120%, ${THEME.glowDim}, transparent 70%)`,
-                      filter: "blur(10px)",
+                      filter: "blur(10px)"
                     }}
                   />
-
                   <div className="flex items-center gap-4">
                     <LevelShield active={isSel} locked={isLocked} color={THEME.glow} />
                     <div className="flex-1 min-w-0">
@@ -152,9 +166,10 @@ export default function CrossAssetDungeon() {
           <div className="mt-5 sm:mt-6 flex items-center justify-center">
             <button
               className="btn-cta"
-              disabled={!selLevel}
-              onClick={() => console.log("Start level:", selLevel?.id)}
+              disabled={!selLevel || !LEVEL_ROUTES[selLevel.id]}
+              onClick={handleStart}
               style={{ ["--ctaGlow" as any]: THEME.glow, ["--ctaGlowDim" as any]: THEME.glowDim }}
+              title={!selLevel ? "Select a level" : (!LEVEL_ROUTES[selLevel.id] ? "Level not available yet" : "Start")}
             >
               {selLevel ? `START • ${selLevel.title}` : "SELECT LEVEL"}
             </button>
@@ -174,30 +189,23 @@ export default function CrossAssetDungeon() {
 
       {/* ===== Styles ===== */}
       <style jsx global>{`
-        /* Caméra */
         .cam-enter{ animation: camIn 900ms cubic-bezier(.16,.8,.2,1) both; }
         @keyframes camIn{
           0%{ transform: translateY(14px) scale(1.06); filter: blur(2px); opacity:0 }
           40%{ opacity:1 }
           100%{ transform: translateY(0) scale(1); filter: blur(0); opacity:1 }
         }
-
-        /* Ring */
         @keyframes dashMove { to { stroke-dashoffset: -2000; } }
         @keyframes ringPulse {
           0%   { transform: scale(0.998); filter: drop-shadow(0 0 6px ${THEME.glowDim}); }
           50%  { transform: scale(1.002); filter: drop-shadow(0 0 14px ${THEME.glowSoft}); }
           100% { transform: scale(0.998); filter: drop-shadow(0 0 6px ${THEME.glowDim}); }
         }
-        @keyframes softPulse {
-          0%,100% { opacity:.18; transform: translate(-50%,-50%) scale(.98); }
-          50%     { opacity:.28; transform: translate(-50%,-50%) scale(1.02); }
-        }
+        @keyframes softPulse { 0%,100% { opacity:.18; transform: translate(-50%,-50%) scale(.98); } 50% { opacity:.28; transform: translate(-50%,-50%) scale(1.02); } }
         @keyframes rippleSoft { 0%{transform:translate(-50%,-50%) scale(.85);opacity:.20} 100%{transform:translate(-50%,-50%) scale(1.18);opacity:0} }
         @keyframes rippleBoost{ 0%{transform:translate(-50%,-50%) scale(.75);opacity:.32} 100%{transform:translate(-50%,-50%) scale(1.15);opacity:0} }
         @keyframes shieldIdle { 0%,100%{filter:drop-shadow(0 0 6px ${THEME.glowDim});transform:translateZ(0) scale(1)} 50%{filter:drop-shadow(0 0 12px ${THEME.glowSoft});transform:translateZ(0) scale(1.03)} }
 
-        /* CTA */
         .btn-cta{
           --ring: var(--ctaGlow, ${THEME.glow});
           --ringDim: var(--ctaGlowDim, ${THEME.glowDim});
@@ -216,7 +224,6 @@ export default function CrossAssetDungeon() {
           background:#123a2c; border-color: color-mix(in srgb, var(--gx-line) 70%, transparent); }
         @keyframes ctaPulse { 0%,100% { opacity:.8 } 50% { opacity:1 } }
 
-        /* ===== Arrival (ion warp vert) ===== */
         .ca-arrival{ position:fixed; inset:0; z-index:60; pointer-events:none; --tint:${THEME.glow}; }
         .ca-arrival .vignette{
           position:absolute; inset:0;
@@ -349,20 +356,11 @@ function LevelShield({ active, locked, color }: { active?: boolean; locked?: boo
             <stop offset="100%" stopColor="#b8ffe5" />
           </linearGradient>
         </defs>
-        <path
-          d="M20 2 L34 8 V20 C34 29 28 36 20 42 C12 36 6 29 6 20 V8 Z"
-          fill="rgba(0,0,0,.55)"
-          stroke="url(#csGrad_cross)"
-          strokeWidth="2"
-        />
-        <path
-          d="M14 20 L20 26 L26 20"
-          fill="none"
-          stroke={locked ? "rgba(255,255,255,.25)" : color}
-          strokeWidth="2.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        <path d="M20 2 L34 8 V20 C34 29 28 36 20 42 C12 36 6 29 6 20 V8 Z"
+              fill="rgba(0,0,0,.55)" stroke="url(#csGrad_cross)" strokeWidth="2" />
+        <path d="M14 20 L20 26 L26 20"
+              fill="none" stroke={locked ? "rgba(255,255,255,.25)" : color}
+              strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
 
       <span

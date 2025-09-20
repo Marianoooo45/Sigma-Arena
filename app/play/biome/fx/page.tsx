@@ -1,6 +1,8 @@
+// app/play/biome/fx/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import BackToMapButton from "@/components/BackToMapButton";
 
 const TOPBAR = 64;
@@ -14,14 +16,24 @@ const THEME = {
 type Level = { id: string; title: string; subtitle: string; diff: number; locked?: boolean };
 
 const LEVELS: Level[] = [
-  { id: "o1", title: "LEVEL 1: VOL BASICS",    subtitle: "Payoff shapes • greeks 101",  diff: 15 },
-  { id: "o2", title: "LEVEL 2: GAMMA CHAMBER", subtitle: "Delta hedging • gamma risk",   diff: 25, locked: true },
-  { id: "o3", title: "LEVEL 3: SKEW LAB",               subtitle: "Smile dynamics • skew traps",  diff: 35, locked: true },
-  { id: "o4", title: "LEVEL 4: VEGA TEMPLE",            subtitle: "Term-structure • vol carry",   diff: 45, locked: true },
-  { id: "o5", title: "LEVEL 5: ELDER VOL SHRINE",       subtitle: "Perfect run required",         diff: 55, locked: true },
+  { id: "x1", title: "LEVEL 1: CARRY & BASIS",         subtitle: "CIP • forward points • roll",      diff: 15 },
+  { id: "x2", title: "LEVEL 2: TERM STRUCTURE",        subtitle: "Contango vs backwardation",        diff: 25, locked: true },
+  { id: "x3", title: "LEVEL 3: SAFE HAVENS & FLOWS",   subtitle: "USD smile • risk-off dynamics",    diff: 35, locked: true },
+  { id: "x4", title: "LEVEL 4: INVENTORY & SEASONALS", subtitle: "Convenience yield • seasonality",  diff: 45, locked: true },
+  { id: "x5", title: "LEVEL 5: ELDER FX/COMMOD SHRINE",subtitle: "Perfect run required",             diff: 55, locked: true }
 ];
 
-export default function OptionsDungeon() {
+// ⚠️ Mapping niveau -> route. Ton niveau 1 existe en /level/o1, donc on route x1→o1.
+const LEVEL_ROUTES: Record<string, string> = {
+  x1: "/play/biome/fx/level/o1",
+  // x2: "/play/biome/fx/level/x2",
+  // x3: "/play/biome/fx/level/x3",
+  // x4: "/play/biome/fx/level/x4",
+  // x5: "/play/biome/fx/level/x5",
+};
+
+export default function FxCommoditiesDungeon() {
+  const router = useRouter();
   const [selected, setSelected] = useState<string | null>(null);
   const selLevel = useMemo(() => LEVELS.find(l => l.id === selected) ?? null, [selected]);
 
@@ -37,7 +49,7 @@ export default function OptionsDungeon() {
     };
   }, []);
 
-  // Effet d'arrivée si on vient de la map (flag "warp")
+  // Effet d'arrivée depuis la map (flag "warp")
   const [arrivalTint, setArrivalTint] = useState<string | null>(null);
   useEffect(() => {
     try {
@@ -53,12 +65,23 @@ export default function OptionsDungeon() {
     } catch {}
   }, []);
 
+  // Lance le niveau sélectionné
+  const handleStart = () => {
+    if (!selLevel) return;
+    const route = LEVEL_ROUTES[selLevel.id];
+    if (!route) return;
+    try {
+      sessionStorage.setItem("warp", JSON.stringify({ ts: Date.now(), tint: THEME.glow }));
+    } catch {}
+    router.push(route);
+  };
+
   return (
     <div className="fixed inset-0 overflow-hidden" style={{ ["--topbar" as any]: `${TOPBAR}px` }}>
       {/* Backdrop */}
       <img
         src="/images/bg_bleu.png"
-        alt="Options biome background"
+        alt="FX & Commodities biome background"
         className="pointer-events-none select-none absolute inset-0 w-full h-full object-cover"
         draggable={false}
       />
@@ -106,20 +129,20 @@ export default function OptionsDungeon() {
                     "group w-full text-left rounded-2xl px-4 sm:px-5 py-3 relative overflow-hidden",
                     "border transition-all duration-200",
                     "backdrop-blur bg-[rgba(8,14,22,.55)] hover:bg-[rgba(10,18,28,.66)]",
-                    isLocked ? "opacity-60 cursor-not-allowed" : "hover:translate-y-[-2px]",
+                    isLocked ? "opacity-60 cursor-not-allowed" : "hover:translate-y-[-2px)"
                   ].join(" ")}
                   style={{
                     borderColor: isSel ? THEME.glow : "color-mix(in srgb, var(--gx-line) 82%, transparent)",
                     boxShadow: isSel
                       ? `0 0 0 1px ${THEME.glowDim} inset, 0 0 18px ${THEME.glowDim}`
-                      : "var(--gx-inner), 0 8px 24px rgba(0,0,0,.35)",
+                      : "var(--gx-inner), 0 8px 24px rgba(0,0,0,.35)"
                   }}
                 >
                   <span
                     className="absolute inset-0 rounded-2xl -z-10 opacity-70"
                     style={{
                       background: `radial-gradient(90% 50% at 50% 120%, ${THEME.glowDim}, transparent 70%)`,
-                      filter: "blur(10px)",
+                      filter: "blur(10px)"
                     }}
                   />
                   <div className="flex items-center gap-4">
@@ -151,9 +174,10 @@ export default function OptionsDungeon() {
           <div className="mt-5 sm:mt-6 flex items-center justify-center">
             <button
               className="btn-cta"
-              disabled={!selLevel}
-              onClick={() => console.log("Start level:", selLevel?.id)}
+              disabled={!selLevel || !LEVEL_ROUTES[selLevel.id]}
+              onClick={handleStart}
               style={{ ["--ctaGlow" as any]: THEME.glow, ["--ctaGlowDim" as any]: THEME.glowDim }}
+              title={!selLevel ? "Select a level" : (!LEVEL_ROUTES[selLevel.id] ? "Level not available yet" : "Start")}
             >
               {selLevel ? `START • ${selLevel.title}` : "SELECT LEVEL"}
             </button>
@@ -171,92 +195,27 @@ export default function OptionsDungeon() {
       )}
 
       <style jsx global>{`
-        /* Ring + pulses */
+        /* (styles identiques à ta version, conservés) */
         @keyframes dashMove { to { stroke-dashoffset: -2000; } }
         @keyframes ringPulse {
           0%   { transform: scale(0.998); filter: drop-shadow(0 0 6px ${THEME.glowDim}); }
           50%  { transform: scale(1.002); filter: drop-shadow(0 0 14px ${THEME.glowSoft}); }
           100% { transform: scale(0.998); filter: drop-shadow(0 0 6px ${THEME.glowDim}); }
         }
-        @keyframes softPulse {
-          0%,100% { opacity:.18; transform: translate(-50%,-50%) scale(.98); }
-          50%     { opacity:.28; transform: translate(-50%,-50%) scale(1.02); }
-        }
+        @keyframes softPulse { 0%,100% { opacity:.18; transform: translate(-50%,-50%) scale(.98); } 50% { opacity:.28; transform: translate(-50%,-50%) scale(1.02); } }
         @keyframes twinkle { 0%,100% { opacity:.25 } 50% { opacity:.6 } }
-
-        /* Ripples */
-        @keyframes rippleSoft {
-          0%   { transform: translate(-50%,-50%) scale(.85); opacity:.20; }
-          100% { transform: translate(-50%,-50%) scale(1.18); opacity:0; }
-        }
-        @keyframes rippleBoost {
-          0%   { transform: translate(-50%,-50%) scale(.75); opacity:.32; }
-          100% { transform: translate(-50%,-50%) scale(1.15); opacity:0; }
-        }
-
-        /* Shield idle */
-        @keyframes shieldIdle {
-          0%,100% { filter: drop-shadow(0 0 6px ${THEME.glowDim}); transform: translateZ(0) scale(1); }
-          50%     { filter: drop-shadow(0 0 12px ${THEME.glowSoft}); transform: translateZ(0) scale(1.03); }
-        }
-
-        /* CTA cyan */
-        .btn-cta{
-          --ring: var(--ctaGlow, ${THEME.glow});
-          --ringDim: var(--ctaGlowDim, ${THEME.glowDim});
-          font-weight: 900;
-          font-size: clamp(1rem, 0.9rem + 0.6vw, 1.25rem);
-          padding: 1rem 1.6rem;
-          border-radius: 9999px;
-          color: #04131b;
-          background: linear-gradient(90deg, var(--ring), #a7ebff);
-          border: 2px solid transparent;
-          box-shadow:
-            0 0 0 3px color-mix(in srgb, var(--ring) 30%, transparent) inset,
-            0 10px 30px rgba(0,0,0,.35),
-            0 0 24px var(--ringDim);
-          transition: transform .15s ease, box-shadow .2s ease, filter .2s ease;
-          position: relative;
-          isolation: isolate;
-        }
-        .btn-cta::after{
-          content:"";
-          position:absolute; inset:-4px;
-          border-radius:9999px;
-          background: radial-gradient(120% 120% at 50% -10%, color-mix(in srgb, var(--ring) 35%, transparent), transparent 55%);
-          filter: blur(12px);
-          z-index:-1; opacity:.85;
-          animation: ctaPulse 3s ease-in-out infinite;
-        }
+        @keyframes rippleSoft { 0%{transform:translate(-50%,-50%) scale(.85);opacity:.20} 100%{transform:translate(-50%,-50%) scale(1.18);opacity:0} }
+        @keyframes rippleBoost{ 0%{transform:translate(-50%,-50%) scale(.75);opacity:.32} 100%{transform:translate(-50%,-50%) scale(1.15);opacity:0} }
+        @keyframes shieldIdle { 0%,100% { filter: drop-shadow(0 0 6px ${THEME.glowDim}); transform: translateZ(0) scale(1); } 50% { filter: drop-shadow(0 0 12px ${THEME.glowSoft}); transform: translateZ(0) scale(1.03); } }
+        .btn-cta{ --ring: var(--ctaGlow, ${THEME.glow}); --ringDim: var(--ctaGlowDim, ${THEME.glowDim}); font-weight: 900; font-size: clamp(1rem, 0.9rem + 0.6vw, 1.25rem); padding: 1rem 1.6rem; border-radius: 9999px; color: #04131b; background: linear-gradient(90deg, var(--ring), #a7ebff); border: 2px solid transparent; box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 30%, transparent) inset, 0 10px 30px rgba(0,0,0,.35), 0 0 24px var(--ringDim); transition: transform .15s ease, box-shadow .2s ease, filter .2s ease; position: relative; isolation: isolate; }
+        .btn-cta::after{ content:""; position:absolute; inset:-4px; border-radius:9999px; background: radial-gradient(120% 120% at 50% -10%, color-mix(in srgb, var(--ring) 35%, transparent), transparent 55%); filter: blur(12px); z-index:-1; opacity:.85; animation: ctaPulse 3s ease-in-out infinite; }
         .btn-cta:hover{ transform: translateY(-2px) scale(1.02); filter: brightness(1.03); }
-        .btn-cta:disabled{
-          filter: grayscale(.35) brightness(.92); cursor:not-allowed; box-shadow:none; color: var(--gx-muted);
-          background:#0f2a36; border-color: color-mix(in srgb, var(--gx-line) 70%, transparent);
-        }
+        .btn-cta:disabled{ filter: grayscale(.35) brightness(.92); cursor:not-allowed; box-shadow:none; color: var(--gx-muted); background:#0f2a36; border-color: color-mix(in srgb, var(--gx-line) 70%, transparent); }
         @keyframes ctaPulse { 0%,100% { opacity:.8 } 50% { opacity:1 } }
-
-        /* Arrival FX */
         .arrivalFX{ position: fixed; inset: 0; z-index: 60; pointer-events: none; --tint: ${THEME.glow}; }
-        .arrivalFX .flash{
-          position:absolute; inset:0;
-          background: radial-gradient(60% 40% at 50% 50%, color-mix(in srgb, var(--tint) 24%, transparent), transparent 70%),
-                      radial-gradient(closest-side, rgba(255,255,255,.12), transparent 60%);
-          mix-blend-mode: screen; animation: aFlash 900ms ease forwards;
-        }
-        .arrivalFX .ring{
-          position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-          width: 160px; height:160px; border-radius:9999px;
-          border: 3px solid color-mix(in srgb, var(--tint) 75%, white 0%);
-          box-shadow: 0 0 18px color-mix(in srgb, var(--tint) 55%, transparent), inset 0 0 18px color-mix(in srgb, var(--tint) 35%, transparent);
-          animation: aRing 900ms cubic-bezier(.2,.75,.2,1) forwards;
-        }
-        .arrivalFX .dust{
-          position:absolute; inset:0; overflow:hidden;
-          background: radial-gradient(1px 1px at 20% 40%, color-mix(in srgb, var(--tint) 65%, #fff 0%), transparent 60%),
-                      radial-gradient(1px 1px at 70% 60%, color-mix(in srgb, var(--tint) 55%, #fff 0%), transparent 60%),
-                      radial-gradient(1px 1px at 40% 70%, color-mix(in srgb, var(--tint) 45%, #fff 0%), transparent 60%);
-          opacity:.0; mix-blend-mode: screen; animation: aDust 900ms ease-out forwards;
-        }
+        .arrivalFX .flash{ position:absolute; inset:0; background: radial-gradient(60% 40% at 50% 50%, color-mix(in srgb, var(--tint) 24%, transparent), transparent 70%), radial-gradient(closest-side, rgba(255,255,255,.12), transparent 60%); mix-blend-mode: screen; animation: aFlash 900ms ease forwards; }
+        .arrivalFX .ring{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width: 160px; height:160px; border-radius:9999px; border: 3px solid color-mix(in srgb, var(--tint) 75%, white 0%); box-shadow: 0 0 18px color-mix(in srgb, var(--tint) 55%, transparent), inset 0 0 18px color-mix(in srgb, var(--tint) 35%, transparent); animation: aRing 900ms cubic-bezier(.2,.75,.2,1) forwards; }
+        .arrivalFX .dust{ position:absolute; inset:0; overflow:hidden; background: radial-gradient(1px 1px at 20% 40%, color-mix(in srgb, var(--tint) 65%, #fff 0%), transparent 60%), radial-gradient(1px 1px at 70% 60%, color-mix(in srgb, var(--tint) 55%, #fff 0%), transparent 60%), radial-gradient(1px 1px at 40% 70%, color-mix(in srgb, var(--tint) 45%, #fff 0%), transparent 60%); opacity:.0; mix-blend-mode: screen; animation: aDust 900ms ease-out forwards; }
         @keyframes aFlash{ 0%{opacity:0} 20%{opacity:1} 100%{opacity:0} }
         @keyframes aRing{ 0%{transform:translate(-50%,-50%) scale(.6); opacity:0} 40%{opacity:1} 100%{transform:translate(-50%,-50%) scale(6); opacity:0} }
         @keyframes aDust{ 0%{opacity:0} 40%{opacity:.6} 100%{opacity:0} }
@@ -270,59 +229,26 @@ export default function OptionsDungeon() {
 function Ring({ children }: { children?: React.ReactNode }) {
   return (
     <div className="relative" style={{ width: "clamp(420px, 68vmin, 840px)", aspectRatio: "1 / 1" }}>
-      <svg
-        className="absolute inset-0 w-full h-full"
-        viewBox="0 0 100 100"
-        preserveAspectRatio="xMidYMid meet"
-        style={{ animation: "ringPulse 12s ease-in-out infinite" }}
-      >
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style={{ animation: "ringPulse 12s ease-in-out infinite" }}>
         <defs>
-          <radialGradient id="ringGlow_bl" cx="50%" cy="50%" r="50%">
+          <radialGradient id="ringGlow_fx" cx="50%" cy="50%" r="50%">
             <stop offset="72%" stopColor="rgba(56,199,255,0)" />
             <stop offset="100%" stopColor="rgba(56,199,255,0.16)" />
           </radialGradient>
-          <linearGradient id="ringStroke_bl" x1="0" x2="1" y1="0" y2="1">
+          <linearGradient id="ringStroke_fx" x1="0" x2="1" y1="0" y2="1">
             <stop offset="0%"  stopColor="rgba(180,240,255,1)" />
             <stop offset="100%" stopColor={THEME.glow} />
           </linearGradient>
         </defs>
-
-        <circle cx="50" cy="50" r="47" fill="url(#ringGlow_bl)" />
-        <circle
-          cx="50" cy="50" r="43.5"
-          fill="none" stroke="url(#ringStroke_bl)" strokeWidth="1.15" strokeLinecap="round"
-          strokeDasharray="28 10" style={{ animation: "dashMove 24s linear infinite" }}
-        />
+        <circle cx="50" cy="50" r="47" fill="url(#ringGlow_fx)" />
+        <circle cx="50" cy="50" r="43.5" fill="none" stroke="url(#ringStroke_fx)" strokeWidth="1.15" strokeLinecap="round" strokeDasharray="28 10" style={{ animation: "dashMove 24s linear infinite" }} />
       </svg>
 
-      {/* halo breathing */}
-      <div
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-        style={{
-          width: "75%",
-          height: "75%",
-          borderRadius: "9999px",
-          background: `radial-gradient(closest-side, ${THEME.glowDim}, transparent 70%)`,
-          filter: "blur(12px)",
-          animation: "softPulse 5.5s ease-in-out infinite",
-        }}
-      />
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ width: "75%", height: "75%", borderRadius: "9999px", background: `radial-gradient(closest-side, ${THEME.glowDim}, transparent 70%)`, filter: "blur(12px)", animation: "softPulse 5.5s ease-in-out infinite" }} />
 
-      {/* twinkles */}
       <div className="absolute inset-0 pointer-events-none">
         {[...Array(10)].map((_, i) => (
-          <span
-            key={i}
-            className="absolute rounded-full"
-            style={{
-              width: 5, height: 5,
-              left: `${50 + Math.cos((i/10)*Math.PI*2) * 43}%`,
-              top:  `${50 + Math.sin((i/10)*Math.PI*2) * 43}%`,
-              background: "rgba(255,255,255,.95)",
-              boxShadow: `0 0 10px ${THEME.glowSoft}`,
-              animation: `twinkle ${4 + (i % 3)}s ease-in-out ${i * .28}s infinite`,
-            }}
-          />
+          <span key={i} className="absolute rounded-full" style={{ width: 5, height: 5, left: `${50 + Math.cos((i/10)*Math.PI*2) * 43}%`, top:  `${50 + Math.sin((i/10)*Math.PI*2) * 43}%`, background: "rgba(255,255,255,.95)", boxShadow: `0 0 10px ${THEME.glowSoft}`, animation: `twinkle ${4 + (i % 3)}s ease-in-out ${i * .28}s infinite` }} />
         ))}
       </div>
 
@@ -335,42 +261,18 @@ function Ring({ children }: { children?: React.ReactNode }) {
 
 function LevelShield({ active, locked, color }: { active?: boolean; locked?: boolean; color: string }) {
   return (
-    <span
-      className="relative grid place-items-center rounded-xl p-1.5 transition-transform duration-200 group-hover:scale-110"
-      style={{ animation: "shieldIdle 3.2s ease-in-out infinite" }}
-    >
+    <span className="relative grid place-items-center rounded-xl p-1.5 transition-transform duration-200 group-hover:scale-110" style={{ animation: "shieldIdle 3.2s ease-in-out infinite" }}>
       <svg width="34" height="38" viewBox="0 0 40 44">
         <defs>
-          <linearGradient id="csGrad_bl" x1="0" x2="1" y1="0" y2="1">
+          <linearGradient id="csGrad_fx" x1="0" x2="1" y1="0" y2="1">
             <stop offset="0%" stopColor={color} />
             <stop offset="100%" stopColor="#e3fbff" />
           </linearGradient>
         </defs>
-        <path
-          d="M20 2 L34 8 V20 C34 29 28 36 20 42 C12 36 6 29 6 20 V8 Z"
-          fill="rgba(0,0,0,.55)"
-          stroke="url(#csGrad_bl)"
-          strokeWidth="2"
-        />
-        <path
-          d="M14 20 L20 26 L26 20"
-          fill="none"
-          stroke={locked ? "rgba(255,255,255,.25)" : color}
-          strokeWidth="2.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        <path d="M20 2 L34 8 V20 C34 29 28 36 20 42 C12 36 6 29 6 20 V8 Z" fill="rgba(0,0,0,.55)" stroke="url(#csGrad_fx)" strokeWidth="2" />
+        <path d="M14 20 L20 26 L26 20" fill="none" stroke={locked ? "rgba(255,255,255,.25)" : color} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
-
-      <span
-        className="absolute inset-0 rounded-xl -z-10"
-        style={{
-          filter: "blur(7px)",
-          opacity: active ? 0.9 : 0.55,
-          background: `radial-gradient(80% 60% at 50% 30%, ${color}, transparent 70%)`,
-          transition: "opacity .2s ease",
-        }}
-      />
+      <span className="absolute inset-0 rounded-xl -z-10" style={{ filter: "blur(7px)", opacity: active ? 0.9 : 0.55, background: `radial-gradient(80% 60% at 50% 30%, ${color}, transparent 70%)`, transition: "opacity .2s ease" }} />
     </span>
   );
 }
@@ -385,7 +287,7 @@ function Ripple({ ambient, color }: { ambient?: boolean; color: string }) {
           style={{
             width: 120, height: 120, borderColor: color, opacity: 0.20,
             animation: `${ambient ? "rippleSoft" : "rippleBoost"} ${3.2 + i}s linear ${i * 0.45}s infinite`,
-            boxShadow: `0 0 14px ${color} inset, 0 0 14px ${color}`,
+            boxShadow: `0 0 14px ${color} inset, 0 0 14px ${color}`
           }}
         />
       ))}
@@ -397,7 +299,7 @@ function Ripple({ ambient, color }: { ambient?: boolean; color: string }) {
           borderRadius: "9999px",
           border: `1px solid ${color}`,
           animation: "rippleBoost 1.6s linear infinite",
-          boxShadow: `0 0 12px ${color} inset, 0 0 12px ${color}`,
+          boxShadow: `0 0 12px ${color} inset, 0 0 12px ${color}`
         }}
       />
     </span>

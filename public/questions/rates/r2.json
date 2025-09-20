@@ -1,0 +1,118 @@
+{
+  "meta": { "biome": "rates", "level": "r1", "title": "Bond Foundations", "version": 1 },
+  "questions": [
+    {
+      "id": "q1",
+      "type": "mcq",
+      "prompt": "What is the relationship between a plain-vanilla bond’s price and its yield to maturity?",
+      "options": [
+        { "id": "a", "label": "Direct (both rise/fall together)" },
+        { "id": "b", "label": "Inverse (one rises when the other falls)", "correct": true, "explanation": "For fixed coupons, higher discount rates reduce present value → lower price." },
+        { "id": "c", "label": "No relationship" },
+        { "id": "d", "label": "Only for zero-coupon bonds" }
+      ],
+      "difficulty": 1,
+      "tags": ["price", "ytm", "basics"]
+    },
+    {
+      "id": "q2",
+      "type": "mcq",
+      "prompt": "Which yield convention discounts EXACTLY at the coupon frequency assumed (e.g., semi-annual in USD Treasuries)?",
+      "options": [
+        { "id": "a", "label": "Money market yield" },
+        { "id": "b", "label": "Bond-equivalent yield (BEY)", "correct": true, "explanation": "BEY annualizes semi-annual compounding as 2× the semi-annual rate." },
+        { "id": "c", "label": "Discount margin" },
+        { "id": "d", "label": "Zero-volatility spread (Z-spread)" }
+      ],
+      "difficulty": 2,
+      "tags": ["conventions", "yield"]
+    },
+    {
+      "id": "q3",
+      "type": "multi",
+      "prompt": "Which of the following increase a bond’s **duration** (all else equal)?",
+      "options": [
+        { "id": "a", "label": "Lower coupon", "correct": true },
+        { "id": "b", "label": "Longer maturity", "correct": true },
+        { "id": "c", "label": "Higher yield", "correct": false, "explanation": "Higher yield reduces duration (cash flows discounted more)." },
+        { "id": "d", "label": "Adding a near-term call feature", "correct": false, "explanation": "Callability usually reduces effective duration." }
+      ],
+      "minCorrect": 2,
+      "difficulty": 2,
+      "tags": ["duration"]
+    },
+    {
+      "id": "q4",
+      "type": "numeric",
+      "prompt": "A 2-year 5% annual-coupon bond is priced at 101.00. The approximate YTM is closest to (in %).",
+      "units": "%",
+      "range": [4.3, 5.3],
+      "decimals": 2,
+      "explanation": "Trial YTM around 4.8–5.0% solves PV(coupons + principal) ≈ 101."
+    },
+    {
+      "id": "q5",
+      "type": "mcq",
+      "prompt": "Which statement about **DV01** is correct?",
+      "options": [
+        { "id": "a", "label": "DV01 is the price change for a 1% shift in yield." },
+        { "id": "b", "label": "DV01 is the price change for a 1bp shift in yield.", "correct": true, "explanation": "DV01 (PVBP) = ΔPrice per 1 basis point move." },
+        { "id": "c", "label": "DV01 is duration divided by 100." },
+        { "id": "d", "label": "DV01 is convexity measured in dollars." }
+      ],
+      "difficulty": 1,
+      "tags": ["dv01", "risk"]
+    },
+    {
+      "id": "q6",
+      "type": "open",
+      "prompt": "In 2–3 sentences, explain **duration** to a non-technical colleague.",
+      "rubric": "Mentions first-order sensitivity of price to yield; higher duration = more rate risk; assumes small parallel shift.",
+      "keywords": ["sensitivity", "first derivative", "parallel shift", "rate risk"],
+      "difficulty": 1
+    },
+    {
+      "id": "q7",
+      "type": "multi",
+      "prompt": "Which components drive a buy-and-hold bond’s expected **carry** over a short horizon?",
+      "options": [
+        { "id": "a", "label": "Coupon income", "correct": true },
+        { "id": "b", "label": "Roll-down along the curve", "correct": true },
+        { "id": "c", "label": "Realized convexity from large moves", "correct": false, "explanation": "Convexity is a move-dependent effect; carry is the drift with no rate change." },
+        { "id": "d", "label": "Accrued interest", "correct": true }
+      ],
+      "difficulty": 2,
+      "tags": ["carry", "roll"]
+    },
+    {
+      "id": "q8",
+      "type": "numeric",
+      "prompt": "A bond has DV01 = $65 per $100k notional. Approximate the price change (in $) for a +7bp parallel shift.",
+      "units": "USD",
+      "answer": -455,
+      "range": [-470, -440],
+      "explanation": "ΔP ≈ -DV01 × Δbp × notional units. Here DV01 is already per $100k, so −65×7 = −455."
+    },
+    {
+      "id": "q9",
+      "type": "mcq",
+      "prompt": "For the same maturity, which bond typically exhibits the **highest** convexity?",
+      "options": [
+        { "id": "a", "label": "Zero-coupon bond", "correct": true, "explanation": "Zeroes concentrate cash at maturity → higher curvature." },
+        { "id": "b", "label": "High-coupon bond" },
+        { "id": "c", "label": "Floating-rate note" },
+        { "id": "d", "label": "Deeply callable bond" }
+      ],
+      "difficulty": 2,
+      "tags": ["convexity"]
+    },
+    {
+      "id": "q10",
+      "type": "open",
+      "prompt": "Give one practical reason traders watch the 2s10s slope even on short-dated trades.",
+      "rubric": "Any valid reason: growth/inflation expectations proxy, hedging duration exposure across tenors, curve carry/roll opportunities, recession signaling.",
+      "keywords": ["slope", "hedge", "expectations", "carry", "signal"],
+      "difficulty": 2
+    }
+  ]
+}

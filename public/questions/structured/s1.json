@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "biome": "structured",
+    "level": "s1",
+    "title": "Tranche Basics",
+    "version": 1
+  },
+  "shuffle": true,
+  "questions": [
+    {
+      "id": "s1q1",
+      "type": "mcq",
+      "prompt": "Dans un CDO, que décrivent les points d’attache/détachement (attachment/detachment) d’une tranche ?",
+      "options": [
+        { "id": "a", "label": "Le calendrier de paiements de coupon" },
+        { "id": "b", "label": "L’intervalle de pertes du portefeuille supportées par la tranche (en % du pool)", "correct": true, "explanation": "Une tranche 3–7% absorbe les pertes cumulées du pool entre 3% et 7% ; en-dessous c’est la tranche subordonnée, au-dessus la tranche senior." },
+        { "id": "c", "label": "Le niveau de corrélation de défaut" },
+        { "id": "d", "label": "Le spread initial négocié sur la tranche" }
+      ]
+    },
+    {
+      "id": "s1q2",
+      "type": "numeric",
+      "prompt": "Portefeuille de 1 000 M. Quelle est la taille notionnelle d’une tranche 3–7 % ? (réponse en M)",
+      "units": "M",
+      "answer": 40
+    },
+    {
+      "id": "s1q3",
+      "type": "mcq",
+      "prompt": "Comment appelle-t-on la tranche 0–x % dans une structure tranched ?",
+      "options": [
+        { "id": "a", "label": "Senior" },
+        { "id": "b", "label": "Mezzanine" },
+        { "id": "c", "label": "Equity / First-loss", "correct": true, "explanation": "La première tranche (0–x %) est la first-loss (equity). Elle absorbe les premières pertes." },
+        { "id": "d", "label": "Super-senior" }
+      ]
+    },
+    {
+      "id": "s1q4",
+      "type": "multi",
+      "prompt": "Structure : 0–3 % (equity), 3–7 % (mezz), 7–100 % (senior). Pertes cumulées du pool = 5 %. Coche les affirmations vraies.",
+      "options": [
+        { "id": "a", "label": "La tranche equity est entièrement consommée (wiped)", "correct": true, "explanation": "0–3 % est intégralement touché par 5 % de pertes." },
+        { "id": "b", "label": "La tranche mezz perd 2 % du pool, soit 50 % de son notionnel", "correct": true, "explanation": "Après 3 % absorbés par l’equity, il reste 2 % qui entament 3–7 % (épaisseur 4 %). 2/4 = 50 % de la tranche." },
+        { "id": "c", "label": "La tranche senior subit 0 % de pertes", "correct": true },
+        { "id": "d", "label": "La tranche mezz ne perd rien" }
+      ],
+      "minCorrect": 3
+    },
+    {
+      "id": "s1q5",
+      "type": "numeric",
+      "prompt": "Tranche 0–5 %. Pertes cumulées du pool = 4 %. Quelle fraction du notionnel de la tranche est perdue ? (réponse en % du notionnel de tranche)",
+      "units": "%",
+      "answer": 80
+    },
+    {
+      "id": "s1q6",
+      "type": "mcq",
+      "prompt": "Quelle formule donne l’épaisseur (notionnel) d’une tranche en % du pool ?",
+      "options": [
+        { "id": "a", "label": "attach × detach" },
+        { "id": "b", "label": "detach − attach", "correct": true, "explanation": "L’épaisseur est simplement la différence entre les points de détachement et d’attache." },
+        { "id": "c", "label": "(detach + attach) / 2" },
+        { "id": "d", "label": "1 − detach" }
+      ]
+    },
+    {
+      "id": "s1q7",
+      "type": "mcq",
+      "prompt": "Quand une tranche est-elle entièrement écrite (wiped) ?",
+      "options": [
+        { "id": "a", "label": "Quand les pertes atteignent le point d’attache" },
+        { "id": "b", "label": "Quand les pertes dépassent le point de détachement", "correct": true, "explanation": "Au-delà du détachement, 100 % du notionnel de tranche est perdu." },
+        { "id": "c", "label": "Quand l’OC test échoue" },
+        { "id": "d", "label": "Quand le spread de la tranche augmente" }
+      ]
+    },
+    {
+      "id": "s1q8",
+      "type": "mcq",
+      "prompt": "Lequel est un mécanisme de credit enhancement classique dans les structures tranched ?",
+      "options": [
+        { "id": "a", "label": "Subordination" },
+        { "id": "b", "label": "Over-collateralization (OC)" },
+        { "id": "c", "label": "Reserve/Excess spread" },
+        { "id": "d", "label": "Tous les éléments ci-dessus", "correct": true, "explanation": "Subordination, OC et reserve/excess spread apportent tous de la protection aux notes seniors." }
+      ]
+    },
+    {
+      "id": "s1q9",
+      "type": "numeric",
+      "prompt": "Structure : 0–3 % (equity), 3–7 % (mezz), 7–10 % (junior-senior), 10–100 % (super-senior). Pertes cumulées = 9 %. Quelle part du notionnel de la tranche mezz est perdue ? (réponse en % du notionnel de tranche)",
+      "units": "%",
+      "answer": 100
+    },
+    {
+      "id": "s1q10",
+      "type": "open",
+      "prompt": "Explique en quelques lignes pourquoi, à structure donnée, une tranche senior est généralement plus sensible à la corrélation de défaut qu’une tranche equity.",
+      "rubric": "Mentionner la concentration des pertes (queue) avec corrélation plus élevée, l’effet de diversification sur equity vs impact de queue sur senior."
+    }
+  ]
+}

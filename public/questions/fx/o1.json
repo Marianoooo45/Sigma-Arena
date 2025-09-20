@@ -1,0 +1,109 @@
+{
+  "biome": "fx",
+  "level": "x1",
+  "title": "LEVEL 1: CARRY & BASIS",
+  "questions": [
+    {
+      "id": "fx1_q01",
+      "type": "mcq",
+      "prompt": "Covered Interest Parity (CIP) relie spot, forward et taux. Laquelle est correcte ?",
+      "options": [
+        { "id": "a", "label": "F = S × (1 + r_dom) / (1 + r_for)", "correct": true, "explanation": "Sous CIP, le forward s’obtient par le ratio des facteurs d’intérêt domestique/étranger appliqué au spot." },
+        { "id": "b", "label": "F = S × (1 + r_for) / (1 + r_dom)", "explanation": "C’est l’inverse : le numérateur est le taux domestique." },
+        { "id": "c", "label": "F = S × (1 + r_dom × r_for)", "explanation": "On utilise des facteurs (1 + r), pas un produit des taux." },
+        { "id": "d", "label": "F = S indépendamment des taux", "explanation": "Les différentiels de taux déplacent le forward." }
+      ]
+    },
+    {
+      "id": "fx1_q02",
+      "type": "numeric",
+      "prompt": "USD/JPY spot = 150.00. r_USD(3m) = 5% annuel, r_JPY(3m) = 0.5% annuel. Approxime le 3m forward (intérêts simples).",
+      "units": "USD/JPY",
+      "range": [151.6, 151.8]
+    },
+    {
+      "id": "fx1_q03",
+      "type": "mcq",
+      "prompt": "Qu’est-ce qui décrit le mieux un marché en contango pour une commodité ?",
+      "options": [
+        { "id": "a", "label": "Le prix future est au-dessus du spot pour la plupart des maturités", "correct": true, "explanation": "Contango = futures > spot (souvent inventaires élevés et coûts de portage positifs)." },
+        { "id": "b", "label": "Le future est systématiquement sous le spot", "explanation": "C’est plutôt la backwardation." },
+        { "id": "c", "label": "Le spot suit toujours le future à l’identique", "explanation": "Les deux convergent à l’échéance, mais ne sont pas identiques hors échéance." },
+        { "id": "d", "label": "Le future est aléatoirement au-dessus ou au-dessous", "explanation": "La structure de terme reflète des forces économiques, pas juste du hasard." }
+      ]
+    },
+    {
+      "id": "fx1_q04",
+      "type": "multi",
+      "prompt": "Sélectionne les actifs souvent considérés comme « safe haven » en stress (risk-off).",
+      "minCorrect": 2,
+      "options": [
+        { "id": "a", "label": "JPY", "correct": true, "explanation": "Le yen est classiquement refuge dans les épisodes de deleveraging." },
+        { "id": "b", "label": "CHF", "correct": true, "explanation": "Le franc suisse a un statut refuge historique." },
+        { "id": "c", "label": "Or", "correct": true, "explanation": "L’or est un refuge non-fiat classique." },
+        { "id": "d", "label": "FX EM high-beta", "explanation": "Les devises EM cycliques ne sont pas des refuges." }
+      ]
+    },
+    {
+      "id": "fx1_q05",
+      "type": "mcq",
+      "prompt": "Convenience yield (commodités) — quel énoncé est correct ?",
+      "options": [
+        { "id": "a", "label": "Un convenience yield élevé tend à pousser le future en dessous du spot (toutes choses égales par ailleurs).", "correct": true, "explanation": "Un bénéfice d’accessibilité abaisse le coût de portage net ⇒ futures plus bas." },
+        { "id": "b", "label": "Il augmente mécaniquement les coûts de stockage", "explanation": "C’est une prime d’utilité, pas un coût." },
+        { "id": "c", "label": "Il rend la courbe forcément croissante", "explanation": "Non, il favorise la backwardation, donc plutôt décroissante." },
+        { "id": "d", "label": "Il ne concerne que l’or", "explanation": "Il s’applique largement aux commodités physiques." }
+      ]
+    },
+    {
+      "id": "fx1_q06",
+      "type": "mcq",
+      "prompt": "Pour un investisseur long-only, la roll yield en contango est généralement…",
+      "options": [
+        { "id": "a", "label": "Négative", "correct": true, "explanation": "Rollover d’un contrat plus cher vers un moins cher à l’approche de l’échéance ⇒ rendement de roulement négatif." },
+        { "id": "b", "label": "Positive", "explanation": "C’est plutôt le cas en backwardation." },
+        { "id": "c", "label": "Toujours nulle", "explanation": "Elle dépend de la pente de courbe." },
+        { "id": "d", "label": "Impossible à signer", "explanation": "Le signe est usuellement négatif en contango." }
+      ]
+    },
+    {
+      "id": "fx1_q07",
+      "type": "mcq",
+      "prompt": "Si les taux US > taux JPY, le 3m USD/JPY forward est en général…",
+      "options": [
+        { "id": "a", "label": "Au-dessus du spot", "correct": true, "explanation": "Avec r_USD > r_JPY, F = S × (1+r_USD)/(1+r_JPY) ⇒ F > S." },
+        { "id": "b", "label": "Sous le spot", "explanation": "Ce serait vrai si le taux domestique était plus faible." },
+        { "id": "c", "label": "Égal au spot", "explanation": "Uniquement si les taux sont identiques (ou base nulle)." },
+        { "id": "d", "label": "Indéterminé", "explanation": "Le signe suit le différentiel de taux via la parité couverte." }
+      ]
+    },
+    {
+      "id": "fx1_q08",
+      "type": "open",
+      "prompt": "Cite deux facteurs qui façonnent la structure de terme d’une commodité (ex. pétrole)."
+    },
+    {
+      "id": "fx1_q09",
+      "type": "multi",
+      "prompt": "Inventaires faibles et convenience yield élevé : coche les implications typiques.",
+      "minCorrect": 2,
+      "options": [
+        { "id": "a", "label": "Courbe en backwardation (spot > futures)", "correct": true, "explanation": "Tension d’offre ⇒ pente décroissante typique." },
+        { "id": "b", "label": "Roll yield positive pour un long-only", "correct": true, "explanation": "Rollover d’un future moins cher vers un plus cher ⇒ gain de roulement." },
+        { "id": "c", "label": "Contango prononcé", "explanation": "C’est l’inverse : contango survient plutôt avec inventaires confortables." },
+        { "id": "d", "label": "Convenience yield négative", "explanation": "Par définition elle est élevée/positive ici." }
+      ]
+    },
+    {
+      "id": "fx1_q10",
+      "type": "mcq",
+      "prompt": "Stratégie de FX carry : quel énoncé est le plus juste (hors basis et variations de change) ?",
+      "options": [
+        { "id": "a", "label": "Être long la devise à taux plus élevé financée en devise à taux plus faible capte un rendement proche du différentiel de taux.", "correct": true, "explanation": "Le portage attendu vient du spread de taux court." },
+        { "id": "b", "label": "Le carry ne dépend pas des taux", "explanation": "Il en dépend par définition." },
+        { "id": "c", "label": "Le carry est toujours positif quel que soit le sens", "explanation": "Le signe dépend du sens de l’exposition." },
+        { "id": "d", "label": "Le carry se calcule uniquement avec la volatilité", "explanation": "La vol impacte le risque, pas la base de carry." }
+      ]
+    }
+  ]
+}

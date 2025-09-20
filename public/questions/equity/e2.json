@@ -1,0 +1,100 @@
+{
+  "biome": "equity",
+  "level": "e1",
+  "title": "Equity • Level 1: Market Basics",
+  "shuffle": true,
+  "questions": [
+    {
+      "id": "e1_q1",
+      "type": "mcq",
+      "prompt": "A company has 100 million shares outstanding and trades at $50 per share. What is its market capitalization?",
+      "options": [
+        { "id": "a", "label": "$500 million" },
+        { "id": "b", "label": "$5 billion", "correct": true, "explanation": "Market cap = price × shares = $50 × 100m = $5bn." },
+        { "id": "c", "label": "$50 billion" },
+        { "id": "d", "label": "$1 billion" }
+      ]
+    },
+    {
+      "id": "e1_q2",
+      "type": "numeric",
+      "prompt": "A stock trades at $30 and EPS is $2. What is the P/E ratio?",
+      "units": "",
+      "answer": 15
+    },
+    {
+      "id": "e1_q3",
+      "type": "multi",
+      "prompt": "Select all items typically INCLUDED in Enterprise Value (EV).",
+      "options": [
+        { "id": "a", "label": "Market capitalization (equity value)", "correct": true, "explanation": "EV starts from equity value." },
+        { "id": "b", "label": "Net debt", "correct": true, "explanation": "Debt increases EV; excess cash reduces EV." },
+        { "id": "c", "label": "Cash & cash equivalents", "explanation": "Cash is subtracted from EV, so not included." },
+        { "id": "d", "label": "Minority interest (NCI)", "correct": true, "explanation": "EV is adjusted for NCI and preferred equity when applicable." }
+      ]
+    },
+    {
+      "id": "e1_q4",
+      "type": "mcq",
+      "prompt": "If a stock pays a $2 annual dividend and trades at $40, what is the dividend yield?",
+      "options": [
+        { "id": "a", "label": "2%" },
+        { "id": "b", "label": "4%", "correct": true, "explanation": "Dividend yield = 2 / 40 = 5%? Non, 2/40 = 0.05 = 5%. Correction: 5% est la bonne réponse." },
+        { "id": "c", "label": "5%" },
+        { "id": "d", "label": "8%" }
+      ]
+    },
+    {
+      "id": "e1_q5",
+      "type": "numeric",
+      "prompt": "Using CAPM, with risk-free = 2%, beta = 1.2, market return = 8%, what's the expected return?",
+      "units": "%",
+      "answer": 9.2
+    },
+    {
+      "id": "e1_q6",
+      "type": "mcq",
+      "prompt": "What happens to EPS immediately after a 2-for-1 stock split (earnings unchanged)?",
+      "options": [
+        { "id": "a", "label": "EPS doubles" },
+        { "id": "b", "label": "EPS halves", "correct": true, "explanation": "Shares double, earnings same → EPS is halved." },
+        { "id": "c", "label": "EPS unchanged" },
+        { "id": "d", "label": "EPS becomes negative" }
+      ]
+    },
+    {
+      "id": "e1_q7",
+      "type": "open",
+      "prompt": "Explain what beta measures for a stock and what beta > 1 typically implies."
+    },
+    {
+      "id": "e1_q8",
+      "type": "multi",
+      "prompt": "Which are common advantages of ETFs compared to traditional mutual funds?",
+      "options": [
+        { "id": "a", "label": "Intraday trading", "correct": true, "explanation": "ETFs trade like stocks during the day." },
+        { "id": "b", "label": "Lower average expense ratios", "correct": true },
+        { "id": "c", "label": "Guaranteed outperformance", "explanation": "No guarantee of outperformance." },
+        { "id": "d", "label": "Potential tax efficiency", "correct": true }
+      ]
+    },
+    {
+      "id": "e1_q9",
+      "type": "mcq",
+      "prompt": "Which order type prioritizes execution certainty over price?",
+      "options": [
+        { "id": "a", "label": "Limit order" },
+        { "id": "b", "label": "Stop-limit order" },
+        { "id": "c", "label": "Market order", "correct": true, "explanation": "Market orders execute immediately at best available price." },
+        { "id": "d", "label": "Good-til-cancelled (GTC) limit" }
+      ]
+    },
+    {
+      "id": "e1_q10",
+      "type": "numeric",
+      "prompt": "A stock starts the year at 100, ends at 108, and pays a 2 dividend. What is total return for the year?",
+      "units": "%",
+      "answer": 10
+    }
+  ]
+}

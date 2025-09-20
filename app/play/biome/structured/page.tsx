@@ -1,6 +1,8 @@
+// app/play/biome/structured/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import BackToMapButton from "@/components/BackToMapButton";
 
 const TOPBAR = 64;
@@ -23,6 +25,7 @@ const LEVELS: Level[] = [
 ];
 
 export default function StructuredProductsDungeon() {
+  const router = useRouter();
   const [selected, setSelected] = useState<string | null>(null);
   const selLevel = useMemo(() => LEVELS.find(l => l.id === selected) ?? null, [selected]);
 
@@ -53,6 +56,12 @@ export default function StructuredProductsDungeon() {
       }
     } catch {}
   }, []);
+
+  function handleStart() {
+    if (!selLevel) return;
+    try { sessionStorage.setItem("warp", JSON.stringify({ ts: Date.now(), tint: THEME.glow })); } catch {}
+    router.push(`/play/biome/structured/level/${selLevel.id}`);
+  }
 
   return (
     <div className="fixed inset-0 overflow-hidden" style={{ ["--topbar" as any]: `${TOPBAR}px` }}>
@@ -108,7 +117,7 @@ export default function StructuredProductsDungeon() {
                     "group w-full text-left rounded-2xl px-4 sm:px-5 py-3 relative overflow-hidden",
                     "border transition-all duration-200",
                     "backdrop-blur bg-[rgba(20,10,18,.52)] hover:bg-[rgba(26,12,22,.62)]",
-                    isLocked ? "opacity-60 cursor-not-allowed" : "hover:translate-y-[-2px]",
+                    isLocked ? "opacity-60 cursor-not-allowed" : "hover:translate-y-[-2px)",
                   ].join(" ")}
                   style={{
                     borderColor: isSel ? THEME.glow : "color-mix(in srgb, var(--gx-line) 82%, transparent)",
@@ -156,7 +165,7 @@ export default function StructuredProductsDungeon() {
             <button
               className="btn-cta"
               disabled={!selLevel}
-              onClick={() => console.log("Start level:", selLevel?.id)}
+              onClick={handleStart}
               style={{ ["--ctaGlow" as any]: THEME.glow, ["--ctaGlowDim" as any]: THEME.glowDim }}
             >
               {selLevel ? `START • ${selLevel.title}` : "SELECT LEVEL"}

@@ -1,7 +1,7 @@
-// app/play/biome/rates/level/r1/page.tsx
+// app/play/biome/macro/level/m1/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import BackToMapButton from "@/components/BackToMapButton";
 import { fetchQuestionSet, type Question, type MCQ, type Multi, type Numeric, type Open } from "@/lib/question_bank";
 import { Progress } from "@/lib/progress";
@@ -9,9 +9,11 @@ import { useRouter } from "next/navigation";
 
 const TOPBAR = 64;
 const THEME = {
-  glow: "rgba(255,209,102,1)",
-  glowSoft: "rgba(255,209,102,.55)",
-  glowDim: "rgba(255,209,102,.22)",
+  // teinte froide / glacée
+  glow: "rgba(229,231,235,1)",        // gris blanc (macro)
+  glowSoft: "rgba(229,231,235,.55)",
+  glowDim: "rgba(229,231,235,.22)",
+  iceEdge: "rgba(180,220,255,1)",     // liseré bleuté / accent
 };
 
 type PickState =
@@ -22,7 +24,7 @@ type PickState =
 
 type Eval = { correct: boolean; msg?: string; neutral?: boolean };
 
-export default function RatesLevelR1() {
+export default function MacroLevelM1() {
   const router = useRouter();
 
   // FX arrivée depuis la map
@@ -48,7 +50,7 @@ export default function RatesLevelR1() {
 
   useEffect(() => {
     setLoading(true);
-    fetchQuestionSet("rates", "r1", true)
+    fetchQuestionSet("macro", "m1", true)
       .then((qs) => {
         setQuestions(qs.questions);
         setLoading(false);
@@ -84,7 +86,7 @@ export default function RatesLevelR1() {
     setOpenCredited(false);
   }, [q?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Raccourcis clavier
+  // Raccourcis clavier (A/B/C/D + Enter)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!q || revealed) return;
@@ -128,10 +130,10 @@ export default function RatesLevelR1() {
         let ok = true;
         for (const id of correct) if (!pick.has(id)) ok = false;
         for (const id of pick) if (!correct.has(id)) ok = false;
-        if (!ok && mul.minCorrect && mul.minCorrect > 0) {
+        if (!ok && (mul as any).minCorrect && (mul as any).minCorrect > 0) {
           let hits = 0;
           for (const id of pick) if (correct.has(id)) hits++;
-          ok = hits >= mul.minCorrect && [...pick].every((id) => correct.has(id));
+          ok = hits >= (mul as any).minCorrect && [...pick].every((id) => correct.has(id));
         }
         return { correct: ok };
       }
@@ -167,7 +169,7 @@ export default function RatesLevelR1() {
     // Incrément si correct (sauf neutral open)
     if (res.correct && !res.neutral) setScore((s) => s + 1);
 
-    // Si dernière question -> termine après un léger délai pour voir le feedback
+    // Si dernière question -> petite pause puis fin
     if (idx === total - 1) {
       setTimeout(() => finishLevel(), 650);
     }
@@ -186,16 +188,16 @@ export default function RatesLevelR1() {
     const pass = total > 0 ? (score / total) >= 0.8 : false;
 
     if (pass) {
-      try { Progress.markCleared("rates", "r1"); } catch {}
+      try { Progress.markCleared("macro", "m1"); } catch {}
     }
-    // Ping UI (deux canaux)
+    // Ping UI
     try { window.dispatchEvent(new Event("sigma:progresschange")); } catch {}
     try { localStorage.setItem("sigma:progress:pulse", String(Date.now())); } catch {}
 
-    router.replace("/play/biome/rates");
+    router.replace("/play/biome/macro");
   }
 
-  const headerTitle = "RATES • LEVEL 1";
+  const headerTitle = "MACRO • LEVEL 1";
   const progressPill = `${Math.min(idx + 1, total || 1)} / ${total || 1}`;
   const scorePill = `${score} / ${total || 1}`;
 
@@ -203,30 +205,30 @@ export default function RatesLevelR1() {
     <div className="fixed inset-0 overflow-hidden" style={{ ["--topbar" as any]: `${TOPBAR}px` }}>
       {/* Backdrop */}
       <img
-        src="/images/bg_or.png"
-        alt="Rates biome background"
+        src="/images/bg_blanc.png"
+        alt="Macro biome background"
         className="pointer-events-none select-none absolute inset-0 w-full h-full object-cover"
         draggable={false}
         loading="eager"
         decoding="async"
         fetchPriority="high"
       />
-      <div className="absolute inset-0 bg-[radial-gradient(900px_600px_at_50%_18%,rgba(0,0,0,.18),transparent_60%),linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.55))]" />
+      <div className="absolute inset-0 bg-[radial-gradient(900px_600px_at_50%_18%,rgba(0,0,0,.20),transparent_60%),linear-gradient(180deg,rgba(0,0,0,.38),rgba(0,0,0,.58))]" />
       <div
         className="pointer-events-none absolute inset-0 blur-3xl opacity-35 scale-110"
         style={{ background: `radial-gradient(60% 40% at 50% 50%, ${THEME.glowDim}, transparent 70%)` }}
       />
 
       {/* Map */}
-      <BackToMapButton variant="rates" href="/play/biome/rates" placement="top-left" size="md" topbarHeight={TOPBAR} />
+      <BackToMapButton variant="macro" href="/play/biome/macro" placement="top-left" size="md" topbarHeight={TOPBAR} />
 
       {/* Topbar */}
       <header
         className="fixed left-1/2 -translate-x-1/2 z-30 mt-2 px-3 py-1.5 rounded-full transition-transform duration-300 hover:scale-105"
         style={{
           top: TOPBAR,
-          color: "#2b1906",
-          background: `linear-gradient(90deg, ${THEME.glow}, #ffe5a6)`,
+          color: "#0e1418",
+          background: `linear-gradient(90deg, ${THEME.glow}, ${THEME.iceEdge})`,
           boxShadow: `0 8px 24px rgba(0,0,0,.35), 0 0 18px ${THEME.glowDim}`,
           border: "1px solid rgba(255,255,255,.25)",
         }}
@@ -245,6 +247,7 @@ export default function RatesLevelR1() {
       >
         {loading && <LoadingCard />}
         {error && <ErrorCard message={error} />}
+
         {!loading && !error && q && (
           <QuestionCard
             theme={THEME}
@@ -269,33 +272,32 @@ export default function RatesLevelR1() {
         <div className="arrivalFX" style={{ ["--tint" as any]: arrivalTint } as React.CSSProperties}>
           <span className="flash" />
           <span className="ring" />
-          <span className="dust" />
+          <span className="snow" />
         </div>
       )}
 
-      {/* Styles */}
+      {/* Styles (glace) */}
       <style jsx global>{`
-        /* ---- neon gold utilities ---- */
-        .gold-outline{
+        /* ---- ice utilities ---- */
+        .ice-outline{
           position:absolute; inset:-1px; border-radius:22px; padding:1px;
-          background: conic-gradient(from 0deg, #ffd166, #fff2c4, #ffd166 40%, #caa23c, #ffd166 75%, #fff2c4, #ffd166);
+          background: conic-gradient(from 0deg, ${THEME.iceEdge}, #ffffff, ${THEME.iceEdge} 40%, #9ec7ff, ${THEME.iceEdge} 75%, #ffffff, ${THEME.iceEdge});
           -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
           -webkit-mask-composite: xor; mask-composite: exclude;
-          box-shadow: 0 0 24px rgba(255,209,102,.18), inset 0 0 8px rgba(255,209,102,.12);
+          box-shadow: 0 0 24px ${THEME.glowDim}, inset 0 0 8px ${THEME.glowDim};
           pointer-events:none;
         }
+        .ice-glow { box-shadow: 0 16px 40px rgba(0,0,0,.45), 0 0 30px ${THEME.glowDim} }
 
-        .gold-glow { box-shadow: 0 16px 40px rgba(0,0,0,.45), 0 0 30px rgba(255,209,102,.25) }
-
-        /* button gold */
-        .btn-gold{
+        /* button icy */
+        .btn-ice{
           --ring: ${THEME.glow};
           --ringDim: ${THEME.glowDim};
+          --edge: ${THEME.iceEdge};
           position: relative;
-          font-weight: 900;
-          letter-spacing: .5px;
-          color: #2b1906;
-          background: linear-gradient(90deg, var(--ring), #ffd98d);
+          font-weight: 900; letter-spacing: .5px;
+          color: #0e1418;
+          background: linear-gradient(90deg, var(--ring), var(--edge));
           border: 2px solid transparent;
           border-radius: 9999px;
           padding: .9rem 1.5rem;
@@ -304,52 +306,50 @@ export default function RatesLevelR1() {
             0 12px 30px rgba(0,0,0,.35),
             0 0 28px var(--ringDim);
           transition: transform .15s ease, filter .2s ease, box-shadow .2s ease;
-          overflow: hidden;
-          isolation: isolate;
+          overflow: hidden; isolation: isolate;
         }
-        .btn-gold:hover{ transform: translateY(-2px) scale(1.02); filter: brightness(1.03); }
-        .btn-gold:active{ transform: translateY(0) scale(.99); }
-        .btn-gold .shine{
+        .btn-ice:hover{ transform: translateY(-2px) scale(1.02); filter: brightness(1.03); }
+        .btn-ice:active{ transform: translateY(0) scale(.99); }
+        .btn-ice .shine{
           content:""; position:absolute; inset:-4px;
           background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,.7) 45%, transparent 55%);
           transform: translateX(-120%); opacity:.0; filter: blur(2px); pointer-events:none;
         }
-        .btn-gold:hover .shine{ animation: shine 1s ease-out both; }
+        .btn-ice:hover .shine{ animation: shine 1s ease-out both; }
+        .btn-ice .ripple{ position:absolute; width:6px; height:6px; border-radius:9999px; background: rgba(255,255,255,.85); opacity:0; pointer-events:none; transform: translate(-50%,-50%) scale(1) }
+        .btn-ice.rippling .ripple{ animation: ripple 600ms ease-out forwards; }
         @keyframes shine{ from{ transform:translateX(-120%); opacity:.0 } to{ transform:translateX(120%); opacity:.9 } }
-
-        .btn-gold .ripple{ position:absolute; width:6px; height:6px; border-radius:9999px; background: rgba(255,255,255,.7); opacity:0; pointer-events:none; transform: translate(-50%,-50%) scale(1) }
-        .btn-gold.rippling .ripple{ animation: ripple 600ms ease-out forwards; }
         @keyframes ripple{ 0%{ opacity:.25; transform:translate(var(--rx),var(--ry)) scale(1) } 100%{ opacity:0; transform:translate(var(--rx),var(--ry)) scale(40) } }
 
         /* choices */
         .choice{ transition: transform .16s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease; }
         .choice:hover .choice-shine{ animation: choiceShine 900ms ease-out both; }
         @keyframes choiceShine{ from{ transform: translateX(-120%); opacity:.0 } to{ transform: translateX(120%); opacity:.5 } }
-        .is-correct{ animation: pulseGold 1200ms ease-in-out 1 both; }
-        @keyframes pulseGold{ 0%{ box-shadow: 0 0 0 1px ${THEME.glowDim} inset, 0 0 0 rgba(0,0,0,0); } 20%{ box-shadow: 0 0 0 1px ${THEME.glowDim} inset, 0 0 24px ${THEME.glowDim}; } 100%{ box-shadow: 0 0 0 1px ${THEME.glowDim} inset, 0 0 10px ${THEME.glowDim}; } }
+        .is-correct{ animation: pulseIce 1200ms ease-in-out 1 both; }
+        @keyframes pulseIce{ 0%{ box-shadow: 0 0 0 1px ${THEME.glowDim} inset, 0 0 0 rgba(0,0,0,0); } 20%{ box-shadow: 0 0 0 1px ${THEME.glowDim} inset, 0 0 24px ${THEME.glowDim}; } 100%{ box-shadow: 0 0 0 1px ${THEME.glowDim} inset, 0 0 10px ${THEME.glowDim}; } }
         .is-wrong{ animation: shake 420ms cubic-bezier(.36,.07,.19,.97) 1; }
         @keyframes shake{ 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(2px); } 30%, 50%, 70% { transform: translateX(-4px); } 40%, 60% { transform: translateX(4px); } }
 
-        /* sparks */
+        /* sparks (givrés) */
         .sparks::before{
           content:""; position:absolute; inset:-6px; border-radius:22px; pointer-events:none;
           background:
-            radial-gradient(2px 2px at 18% 22%, rgba(255,255,255,.7), transparent 60%),
-            radial-gradient(1.5px 1.5px at 76% 18%, rgba(255,255,255,.7), transparent 60%),
-            radial-gradient(1.5px 1.5px at 64% 82%, rgba(255,255,255,.6), transparent 60%),
+            radial-gradient(2px 2px at 18% 22%, rgba(255,255,255,.8), transparent 60%),
+            radial-gradient(1.5px 1.5px at 76% 18%, rgba(255,255,255,.75), transparent 60%),
+            radial-gradient(1.5px 1.5px at 64% 82%, rgba(255,255,255,.7), transparent 60%),
             radial-gradient(1.8px 1.8px at 32% 72%, rgba(255,255,255,.65), transparent 60%);
           mix-blend-mode: screen; opacity:.35; filter: blur(.2px);
           animation: twinkle 4s ease-in-out infinite;
         }
         @keyframes twinkle{ 0%,100%{opacity:.2} 50%{opacity:.55} }
 
-        /* Arrival FX */
+        /* Arrival FX (neige / givre) */
         @keyframes softPulse { 0%,100%{opacity:.18; transform:translate(-50%,-50%) scale(.98)} 50%{opacity:.28; transform:translate(-50%,-50%) scale(1.02)} }
         .arrivalFX{ position:fixed; inset:0; z-index:60; pointer-events:none; --tint:${THEME.glow}; }
         .arrivalFX .flash{ position:absolute; inset:0; background: radial-gradient(60% 40% at 50% 50%, color-mix(in srgb, var(--tint) 24%, transparent), transparent 70%), radial-gradient(closest-side, rgba(255,255,255,.12), transparent 60%); mix-blend-mode:screen; animation:aFlash 900ms ease forwards; }
-        .arrivalFX .ring{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:160px; height:160px; border-radius:9999px; border:3px solid color-mix(in srgb, var(--tint) 75%, white 0%); box-shadow:0 0 18px color-mix(in srgb, var(--tint) 55%, transparent), inset 0 0 18px color-mix(in srgb, var(--tint) 35%, transparent); animation:aRing 900ms cubic-bezier(.2,.75,.2,1) forwards; }
-        .arrivalFX .dust{ position:absolute; inset:0; overflow:hidden; background: radial-gradient(1px 1px at 20% 40%, color-mix(in srgb, var(--tint) 65%, #fff 0%), transparent 60%), radial-gradient(1px 1px at 70% 60%, color-mix(in srgb, var(--tint) 55%, #fff 0%), transparent 60%), radial-gradient(1px 1px at 40% 70%, color-mix(in srgb, var(--tint) 45%, #fff 0%), transparent 60%); opacity:.0; mix-blend-mode:screen; animation:aDust 900ms ease-out forwards; }
-        @keyframes aFlash{0%{opacity:0}20%{opacity:1}100%{opacity:0}} @keyframes aRing{0%{transform:translate(-50%,-50%) scale(.6); opacity:0}40%{opacity:1}100%{transform:translate(-50%,-50%) scale(6); opacity:0}} @keyframes aDust{0%{opacity:0}40%{opacity:.6}100%{opacity:0}}
+        .arrivalFX .ring{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:160px; height:160px; border-radius:9999px; border:3px solid color-mix(in srgb, var(--tint) 85%, ${THEME.iceEdge} 0%); box-shadow:0 0 18px color-mix(in srgb, ${THEME.iceEdge} 60%, transparent), inset 0 0 18px color-mix(in srgb, ${THEME.iceEdge} 40%, transparent); animation:aRing 900ms cubic-bezier(.2,.75,.2,1) forwards; }
+        .arrivalFX .snow{ position:absolute; inset:0; overflow:hidden; background: radial-gradient(1px 1px at 20% 40%, #ffffff, transparent 60%), radial-gradient(1px 1px at 70% 60%, #cfeaff, transparent 60%), radial-gradient(1px 1px at 40% 70%, #eaf6ff, transparent 60%); opacity:.0; mix-blend-mode:screen; animation:aSnow 900ms ease-out forwards; }
+        @keyframes aFlash{0%{opacity:0}20%{opacity:1}100%{opacity:0}} @keyframes aRing{0%{transform:translate(-50%,-50%) scale(.6); opacity:0}40%{opacity:1}100%{transform:translate(-50%,-50%) scale(6); opacity:0}} @keyframes aSnow{0%{opacity:0}40%{opacity:.6}100%{opacity:0}}
       `}</style>
     </div>
   );
@@ -360,10 +360,10 @@ export default function RatesLevelR1() {
 function LoadingCard() {
   return (
     <div
-      className="relative w-[min(880px,92%)] rounded-3xl p-6 backdrop-blur grid place-items-center gold-glow"
-      style={{ background: "rgba(24,16,8,.55)", border: "1px solid rgba(255,255,255,.08)" }}
+      className="relative w-[min(880px,92%)] rounded-3xl p-6 backdrop-blur grid place-items-center ice-glow"
+      style={{ background: "rgba(12,16,20,.55)", border: "1px solid rgba(255,255,255,.08)" }}
     >
-      <div className="gold-outline" />
+      <div className="ice-outline" />
       <div className="animate-pulse text-sm text-[var(--gx-muted)]">Loading questions…</div>
     </div>
   );
@@ -372,10 +372,10 @@ function LoadingCard() {
 function ErrorCard({ message }: { message: string }) {
   return (
     <div
-      className="relative w-[min(880px,92%)] rounded-3xl p-6 backdrop-blur gold-glow"
-      style={{ background: "rgba(24,16,8,.55)", border: "1px solid rgba(255,128,128,.35)" }}
+      className="relative w-[min(880px,92%)] rounded-3xl p-6 backdrop-blur ice-glow"
+      style={{ background: "rgba(12,16,20,.55)", border: "1px solid rgba(255,128,128,.35)" }}
     >
-      <div className="gold-outline" />
+      <div className="ice-outline" />
       <div className="text-[rgba(255,160,160,.95)] text-sm">Failed to load questions: {message}</div>
     </div>
   );
@@ -408,7 +408,7 @@ function QuestionCard({
     setTimeout(() => setRippling(false), 600);
   };
 
-  // Helpers open: crédit/décrédit
+  // Helpers open: crédit/décrédit (self-check)
   const markOpenCorrect = () => {
     if (!openCredited) {
       addOnePoint();
@@ -417,15 +417,27 @@ function QuestionCard({
   };
   const markOpenWrong = () => {
     setOpenCredited(false);
-    // (si tu veux autoriser de retirer un point après l'avoir ajouté, gère un state pour le faire - ici on ne remet pas le score en arrière)
   };
 
   return (
     <div
-      className="relative w-[min(880px,92%)] rounded-3xl p-5 sm:p-6 md:p-7 backdrop-blur gold-glow sparks"
-      style={{ background: "rgba(24,16,8,.55)", border: "1px solid color-mix(in srgb, var(--gx-line) 80%, transparent)" }}
+      className="relative w-[min(880px,92%)] rounded-3xl p-5 sm:p-6 md:p-7 backdrop-blur ice-glow sparks"
+      style={{ background: "rgba(12,16,20,.55)", border: "1px solid color-mix(in srgb, var(--gx-line) 80%, transparent)" }}
     >
-      <div className="gold-outline" />
+      {/* Pastille NEW (au-dessus de la box) */}
+      <span
+        className="absolute -top-3 left-5 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider select-none"
+        style={{
+          color: "#0e1418",
+          background: `linear-gradient(90deg, ${theme.glow}, ${theme.iceEdge})`,
+          border: "1px solid rgba(255,255,255,.25)",
+          boxShadow: `0 8px 18px rgba(0,0,0,.35), 0 0 12px ${theme.glowDim}`,
+        }}
+      >
+        NEW
+      </span>
+
+      <div className="ice-outline" />
 
       {/* Halo */}
       <span
@@ -438,13 +450,13 @@ function QuestionCard({
         <div className="flex items-center gap-3">
           <Shield color={theme.glow} />
           <div>
-            <div className="font-extrabold tracking-wide" style={{ color: theme.glow }}>LEVEL 1 • RATES</div>
-            <div className="text-[13px] text-[var(--gx-muted)]">Bond foundations</div>
+            <div className="font-extrabold tracking-wide" style={{ color: theme.glow }}>LEVEL 1 • MACRO</div>
+            <div className="text-[13px] text-[var(--gx-muted)]">Business cycle basics</div>
           </div>
         </div>
         <div
           className="px-3 py-1.5 rounded-full text-xs font-bold"
-          style={{ color: "#2b1906", background: `linear-gradient(90deg, ${theme.glow}, #ffd98d)`, boxShadow: `0 0 18px ${theme.glowDim}` }}
+          style={{ color: "#0e1418", background: `linear-gradient(90deg, ${theme.glow}, ${THEME.iceEdge})`, boxShadow: `0 0 18px ${theme.glowDim}` }}
         >
           {idx + 1} / {total || 1}
         </div>
@@ -505,10 +517,7 @@ function QuestionCard({
       {q.type === "open" && revealed && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <span className="text-xs text-[var(--gx-muted)]">Self-check:</span>
-          <button
-            className="btn-gold"
-            onClick={markOpenCorrect}
-          >
+          <button className={`btn-ice ${rippling ? "rippling" : ""}`} onClick={markOpenCorrect} style={{ ["--rx" as any]: "50%", ["--ry" as any]: "50%" }}>
             <span className="shine" />
             I was correct
           </button>
@@ -532,7 +541,7 @@ function QuestionCard({
         </div>
         {!revealed ? (
           <button
-            className={`btn-gold ${rippling ? "rippling" : ""}`}
+            className={`btn-ice ${rippling ? "rippling" : ""}`}
             onClick={(e) => { triggerRipple(e); onSubmit(); }}
             style={{ ["--rx" as any]: ripPos.x, ["--ry" as any]: ripPos.y }}
           >
@@ -542,7 +551,7 @@ function QuestionCard({
           </button>
         ) : (
           <button
-            className={`btn-gold ${rippling ? "rippling" : ""}`}
+            className={`btn-ice ${rippling ? "rippling" : ""}`}
             onClick={(e) => { triggerRipple(e); onNext(); }}
             style={{ ["--rx" as any]: ripPos.x, ["--ry" as any]: ripPos.y }}
           >
@@ -582,7 +591,7 @@ function Choices({
               disabled={revealed}
               className={[
                 "choice w-full rounded-2xl px-4 py-3 text-left border group relative overflow-hidden",
-                "bg-[rgba(30,22,12,.55)] hover:bg-[rgba(34,24,14,.66)]",
+                "bg-[rgba(16,20,26,.55)] hover:bg-[rgba(20,24,30,.66)]",
                 revealed ? "cursor-default" : "hover:translate-y-[-1px]",
                 revealRight ? "is-correct" : "",
                 revealWrong ? "is-wrong" : "",
@@ -606,7 +615,7 @@ function Choices({
               />
 
               <div className="flex items-center gap-3 relative">
-                <IdBadge id={c.id.toUpperCase()} active={!!active} glow={theme.glow} />
+                <IdBadge id={c.id.toUpperCase()} active={!!active} glow={theme.glow} edge={THEME.iceEdge} />
                 <div className="flex-1">
                   <div className="font-semibold">{c.label}</div>
                   {revealed && (revealRight || revealWrong) && c.explanation && (
@@ -641,7 +650,7 @@ function NumericBox({
   return (
     <div className="flex items-center gap-3">
       <input
-        className="flex-1 rounded-xl px-3 py-2 bg-[rgba(30,22,12,.55)] border outline-none"
+        className="flex-1 rounded-xl px-3 py-2 bg-[rgba(16,20,26,.55)] border outline-none"
         style={{ borderColor: "color-mix(in srgb, var(--gx-line) 82%, transparent)" }}
         value={value}
         disabled={disabled}
@@ -658,7 +667,7 @@ function OpenBox({ theme, value, disabled, onChange }:{
 }) {
   return (
     <textarea
-      className="w-full min-h-28 rounded-xl px-3 py-2 bg-[rgba(30,22,12,.55)] border outline-none"
+      className="w-full min-h-28 rounded-xl px-3 py-2 bg-[rgba(16,20,26,.55)] border outline-none"
       style={{ borderColor: "color-mix(in srgb, var(--gx-line) 82%, transparent)" }}
       placeholder="Your answer..."
       value={value}
@@ -673,25 +682,25 @@ function Shield({ color }: { color: string }) {
     <span className="relative grid place-items-center rounded-xl p-1" style={{ filter: `drop-shadow(0 0 10px ${THEME.glowDim})` }}>
       <svg width="30" height="34" viewBox="0 0 40 44">
         <defs>
-          <linearGradient id="csGrad_or" x1="0" x2="1" y1="0" y2="1">
-            <stop offset="0%" stopColor={color} />
-            <stop offset="100%" stopColor="#fff2c4" />
+          <linearGradient id="csGrad_ice" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0%" stopColor={THEME.iceEdge} />
+            <stop offset="100%" stopColor={color} />
           </linearGradient>
         </defs>
-        <path d="M20 2 L34 8 V20 C34 29 28 36 20 42 C12 36 6 29 6 20 V8 Z" fill="rgba(0,0,0,.55)" stroke="url(#csGrad_or)" strokeWidth="2" />
+        <path d="M20 2 L34 8 V20 C34 29 28 36 20 42 C12 36 6 29 6 20 V8 Z" fill="rgba(0,0,0,.55)" stroke="url(#csGrad_ice)" strokeWidth="2" />
         <path d="M14 19 L20 25 L26 19" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </span>
   );
 }
 
-function IdBadge({ id, active, glow }: { id: string; active?: boolean; glow: string }) {
+function IdBadge({ id, active, glow, edge }: { id: string; active?: boolean; glow: string; edge: string }) {
   return (
     <span
       className="grid place-items-center w-8 h-8 rounded-xl font-black"
       style={{
-        color: active ? "#2b1906" : "rgba(255,255,255,.85)",
-        background: active ? `linear-gradient(90deg, ${glow}, #ffd98d)` : "rgba(255,255,255,.06)",
+        color: active ? "#0e1418" : "rgba(255,255,255,.85)",
+        background: active ? `linear-gradient(90deg, ${glow}, ${edge})` : "rgba(255,255,255,.06)",
         border: active ? "2px solid transparent" : "1px solid rgba(255,255,255,.15)",
         boxShadow: active ? `0 0 16px color-mix(in srgb, ${glow} 35%, transparent)` : undefined,
       }}

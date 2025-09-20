@@ -1,6 +1,8 @@
+// app/play/biome/macro/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import BackToMapButton from "@/components/BackToMapButton";
 
 const TOPBAR = 64;
@@ -24,6 +26,7 @@ const LEVELS: Level[] = [
 ];
 
 export default function MacroDungeon() {
+  const router = useRouter();
   const [selected, setSelected] = useState<string | null>(null);
   const selLevel = useMemo(() => LEVELS.find(l => l.id === selected) ?? null, [selected]);
 
@@ -54,6 +57,11 @@ export default function MacroDungeon() {
       }
     } catch {}
   }, []);
+
+  const startSelected = () => {
+    if (!selLevel || LEVELS.find(l => l.id === selLevel.id)?.locked) return;
+    router.push(`/play/biome/macro/level/${selLevel.id}`);
+  };
 
   return (
     <div className="fixed inset-0 overflow-hidden" style={{ ["--topbar" as any]: `${TOPBAR}px` }}>
@@ -134,8 +142,10 @@ export default function MacroDungeon() {
                       </div>
                     </div>
                     {!isLocked ? (
-                      <span className="text-xs px-2 py-1 rounded-md border"
-                            style={{ borderColor: THEME.glowDim, color: THEME.glow }}>
+                      <span
+                        className="text-xs px-2 py-1 rounded-md border"
+                        style={{ borderColor: THEME.glowDim, color: THEME.glow }}
+                      >
                         Enter
                       </span>
                     ) : (
@@ -155,7 +165,7 @@ export default function MacroDungeon() {
             <button
               className="btn-cta"
               disabled={!selLevel}
-              onClick={() => console.log("Start level:", selLevel?.id)}
+              onClick={startSelected}
               style={{ ["--ctaGlow" as any]: THEME.glow, ["--ctaGlowDim" as any]: THEME.glowDim }}
             >
               {selLevel ? `START • ${selLevel.title}` : "SELECT LEVEL"}

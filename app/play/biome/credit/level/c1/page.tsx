@@ -1,7 +1,7 @@
-// app/play/biome/rates/level/r1/page.tsx
+// app/play/biome/credit/level/c1/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import BackToMapButton from "@/components/BackToMapButton";
 import { fetchQuestionSet, type Question, type MCQ, type Multi, type Numeric, type Open } from "@/lib/question_bank";
 import { Progress } from "@/lib/progress";
@@ -9,9 +9,10 @@ import { useRouter } from "next/navigation";
 
 const TOPBAR = 64;
 const THEME = {
-  glow: "rgba(255,209,102,1)",
-  glowSoft: "rgba(255,209,102,.55)",
-  glowDim: "rgba(255,209,102,.22)",
+  glow: "rgba(168,85,247,1)",   // violet néon — credit
+  glowSoft: "rgba(168,85,247,.55)",
+  glowDim: "rgba(168,85,247,.22)",
+  edge: "#e9d5ff",
 };
 
 type PickState =
@@ -22,7 +23,7 @@ type PickState =
 
 type Eval = { correct: boolean; msg?: string; neutral?: boolean };
 
-export default function RatesLevelR1() {
+export default function CreditLevelC1() {
   const router = useRouter();
 
   // FX arrivée depuis la map
@@ -48,7 +49,7 @@ export default function RatesLevelR1() {
 
   useEffect(() => {
     setLoading(true);
-    fetchQuestionSet("rates", "r1", true)
+    fetchQuestionSet("credit", "c1", true)
       .then((qs) => {
         setQuestions(qs.questions);
         setLoading(false);
@@ -72,7 +73,7 @@ export default function RatesLevelR1() {
   const [score, setScore] = useState(0);
   const [openCredited, setOpenCredited] = useState(false); // empêche double crédit sur une open
 
-  // Réinitialise l'état quand la question change
+  // Réinit à chaque question
   useEffect(() => {
     if (!q) return;
     if (q.type === "mcq") setPicked({ type: "mcq", value: null });
@@ -84,7 +85,7 @@ export default function RatesLevelR1() {
     setOpenCredited(false);
   }, [q?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Raccourcis clavier
+  // Raccourcis clavier (A/B/C/D + Enter)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!q || revealed) return;
@@ -128,9 +129,12 @@ export default function RatesLevelR1() {
         let ok = true;
         for (const id of correct) if (!pick.has(id)) ok = false;
         for (const id of pick) if (!correct.has(id)) ok = false;
+        // minCorrect optionnelle
+        // @ts-ignore
         if (!ok && mul.minCorrect && mul.minCorrect > 0) {
           let hits = 0;
           for (const id of pick) if (correct.has(id)) hits++;
+          // @ts-ignore
           ok = hits >= mul.minCorrect && [...pick].every((id) => correct.has(id));
         }
         return { correct: ok };
@@ -150,7 +154,6 @@ export default function RatesLevelR1() {
         return { correct: false };
       }
       case "open": {
-        // Par défaut : neutre (non compté). L'utilisateur peut s'auto-créditer après reveal.
         return { correct: false, neutral: true };
       }
       default:
@@ -164,47 +167,41 @@ export default function RatesLevelR1() {
     setLastEval(res);
     setRevealed(true);
 
-    // Incrément si correct (sauf neutral open)
     if (res.correct && !res.neutral) setScore((s) => s + 1);
 
-    // Si dernière question -> termine après un léger délai pour voir le feedback
     if (idx === total - 1) {
       setTimeout(() => finishLevel(), 650);
     }
   }
 
   function goNext() {
-    if (idx + 1 < total) {
-      setIdx((i) => i + 1);
-    } else {
-      finishLevel();
-    }
+    if (idx + 1 < total) setIdx((i) => i + 1);
+    else finishLevel();
   }
 
-  // Règle de validation du niveau : ≥ 80%
+  // Règle : ≥ 80%
   function finishLevel() {
     const pass = total > 0 ? (score / total) >= 0.8 : false;
 
     if (pass) {
-      try { Progress.markCleared("rates", "r1"); } catch {}
+      try { Progress.markCleared("credit", "c1"); } catch {}
     }
-    // Ping UI (deux canaux)
     try { window.dispatchEvent(new Event("sigma:progresschange")); } catch {}
     try { localStorage.setItem("sigma:progress:pulse", String(Date.now())); } catch {}
 
-    router.replace("/play/biome/rates");
+    router.replace("/play/biome/credit");
   }
 
-  const headerTitle = "RATES • LEVEL 1";
+  const headerTitle = "CREDIT • LEVEL 1";
   const progressPill = `${Math.min(idx + 1, total || 1)} / ${total || 1}`;
   const scorePill = `${score} / ${total || 1}`;
 
   return (
     <div className="fixed inset-0 overflow-hidden" style={{ ["--topbar" as any]: `${TOPBAR}px` }}>
-      {/* Backdrop */}
+      {/* Backdrop violet */}
       <img
-        src="/images/bg_or.png"
-        alt="Rates biome background"
+        src="/images/bg_violet.png"
+        alt="Credit biome background"
         className="pointer-events-none select-none absolute inset-0 w-full h-full object-cover"
         draggable={false}
         loading="eager"
@@ -218,15 +215,15 @@ export default function RatesLevelR1() {
       />
 
       {/* Map */}
-      <BackToMapButton variant="rates" href="/play/biome/rates" placement="top-left" size="md" topbarHeight={TOPBAR} />
+      <BackToMapButton variant="credit" href="/play/biome/credit" placement="top-left" size="md" topbarHeight={TOPBAR} />
 
-      {/* Topbar */}
+      {/* Topbar (violet) */}
       <header
         className="fixed left-1/2 -translate-x-1/2 z-30 mt-2 px-3 py-1.5 rounded-full transition-transform duration-300 hover:scale-105"
         style={{
           top: TOPBAR,
-          color: "#2b1906",
-          background: `linear-gradient(90deg, ${THEME.glow}, #ffe5a6)`,
+          color: "#160c22",
+          background: `linear-gradient(90deg, ${THEME.glow}, ${THEME.edge})`,
           boxShadow: `0 8px 24px rgba(0,0,0,.35), 0 0 18px ${THEME.glowDim}`,
           border: "1px solid rgba(255,255,255,.25)",
         }}
@@ -264,7 +261,7 @@ export default function RatesLevelR1() {
         )}
       </main>
 
-      {/* Arrival FX */}
+      {/* Arrival FX (utilise THEME.glow => violet) */}
       {arrivalTint && (
         <div className="arrivalFX" style={{ ["--tint" as any]: arrivalTint } as React.CSSProperties}>
           <span className="flash" />
@@ -273,29 +270,26 @@ export default function RatesLevelR1() {
         </div>
       )}
 
-      {/* Styles */}
+      {/* Styles (version violette) */}
       <style jsx global>{`
-        /* ---- neon gold utilities ---- */
-        .gold-outline{
+        .violet-outline{
           position:absolute; inset:-1px; border-radius:22px; padding:1px;
-          background: conic-gradient(from 0deg, #ffd166, #fff2c4, #ffd166 40%, #caa23c, #ffd166 75%, #fff2c4, #ffd166);
+          background: conic-gradient(from 0deg, #a855f7, #e9d5ff, #a855f7 40%, #7e22ce, #a855f7 75%, #e9d5ff, #a855f7);
           -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
           -webkit-mask-composite: xor; mask-composite: exclude;
-          box-shadow: 0 0 24px rgba(255,209,102,.18), inset 0 0 8px rgba(255,209,102,.12);
+          box-shadow: 0 0 24px ${THEME.glowDim}, inset 0 0 8px ${THEME.glowDim};
           pointer-events:none;
         }
+        .violet-glow { box-shadow: 0 16px 40px rgba(0,0,0,.45), 0 0 30px ${THEME.glowDim} }
 
-        .gold-glow { box-shadow: 0 16px 40px rgba(0,0,0,.45), 0 0 30px rgba(255,209,102,.25) }
-
-        /* button gold */
-        .btn-gold{
+        .btn-violet{
           --ring: ${THEME.glow};
           --ringDim: ${THEME.glowDim};
           position: relative;
           font-weight: 900;
           letter-spacing: .5px;
-          color: #2b1906;
-          background: linear-gradient(90deg, var(--ring), #ffd98d);
+          color: #160c22;
+          background: linear-gradient(90deg, var(--ring), ${THEME.edge});
           border: 2px solid transparent;
           border-radius: 9999px;
           padding: .9rem 1.5rem;
@@ -304,33 +298,33 @@ export default function RatesLevelR1() {
             0 12px 30px rgba(0,0,0,.35),
             0 0 28px var(--ringDim);
           transition: transform .15s ease, filter .2s ease, box-shadow .2s ease;
-          overflow: hidden;
-          isolation: isolate;
+          overflow: hidden; isolation: isolate;
         }
-        .btn-gold:hover{ transform: translateY(-2px) scale(1.02); filter: brightness(1.03); }
-        .btn-gold:active{ transform: translateY(0) scale(.99); }
-        .btn-gold .shine{
+        .btn-violet:hover{ transform: translateY(-2px) scale(1.02); filter: brightness(1.03); }
+        .btn-violet:active{ transform: translateY(0) scale(.99); }
+        .btn-violet .shine{
           content:""; position:absolute; inset:-4px;
           background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,.7) 45%, transparent 55%);
           transform: translateX(-120%); opacity:.0; filter: blur(2px); pointer-events:none;
         }
-        .btn-gold:hover .shine{ animation: shine 1s ease-out both; }
+        .btn-violet:hover .shine{ animation: shine 1s ease-out both; }
         @keyframes shine{ from{ transform:translateX(-120%); opacity:.0 } to{ transform:translateX(120%); opacity:.9 } }
-
-        .btn-gold .ripple{ position:absolute; width:6px; height:6px; border-radius:9999px; background: rgba(255,255,255,.7); opacity:0; pointer-events:none; transform: translate(-50%,-50%) scale(1) }
-        .btn-gold.rippling .ripple{ animation: ripple 600ms ease-out forwards; }
+        .btn-violet .ripple{ position:absolute; width:6px; height:6px; border-radius:9999px; background: rgba(255,255,255,.7); opacity:0; pointer-events:none; transform: translate(-50%,-50%) scale(1) }
+        .btn-violet.rippling .ripple{ animation: ripple 600ms ease-out forwards; }
         @keyframes ripple{ 0%{ opacity:.25; transform:translate(var(--rx),var(--ry)) scale(1) } 100%{ opacity:0; transform:translate(var(--rx),var(--ry)) scale(40) } }
 
-        /* choices */
         .choice{ transition: transform .16s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease; }
         .choice:hover .choice-shine{ animation: choiceShine 900ms ease-out both; }
         @keyframes choiceShine{ from{ transform: translateX(-120%); opacity:.0 } to{ transform: translateX(120%); opacity:.5 } }
-        .is-correct{ animation: pulseGold 1200ms ease-in-out 1 both; }
-        @keyframes pulseGold{ 0%{ box-shadow: 0 0 0 1px ${THEME.glowDim} inset, 0 0 0 rgba(0,0,0,0); } 20%{ box-shadow: 0 0 0 1px ${THEME.glowDim} inset, 0 0 24px ${THEME.glowDim}; } 100%{ box-shadow: 0 0 0 1px ${THEME.glowDim} inset, 0 0 10px ${THEME.glowDim}; } }
+        .is-correct{ animation: pulseViolet 1200ms ease-in-out 1 both; }
+        @keyframes pulseViolet{
+          0%{ box-shadow: 0 0 0 1px ${THEME.glowDim} inset, 0 0 0 rgba(0,0,0,0); }
+          20%{ box-shadow: 0 0 0 1px ${THEME.glowDim} inset, 0 0 24px ${THEME.glowDim}; }
+          100%{ box-shadow: 0 0 0 1px ${THEME.glowDim} inset, 0 0 10px ${THEME.glowDim}; }
+        }
         .is-wrong{ animation: shake 420ms cubic-bezier(.36,.07,.19,.97) 1; }
         @keyframes shake{ 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(2px); } 30%, 50%, 70% { transform: translateX(-4px); } 40%, 60% { transform: translateX(4px); } }
 
-        /* sparks */
         .sparks::before{
           content:""; position:absolute; inset:-6px; border-radius:22px; pointer-events:none;
           background:
@@ -342,8 +336,6 @@ export default function RatesLevelR1() {
           animation: twinkle 4s ease-in-out infinite;
         }
         @keyframes twinkle{ 0%,100%{opacity:.2} 50%{opacity:.55} }
-
-        /* Arrival FX */
         @keyframes softPulse { 0%,100%{opacity:.18; transform:translate(-50%,-50%) scale(.98)} 50%{opacity:.28; transform:translate(-50%,-50%) scale(1.02)} }
         .arrivalFX{ position:fixed; inset:0; z-index:60; pointer-events:none; --tint:${THEME.glow}; }
         .arrivalFX .flash{ position:absolute; inset:0; background: radial-gradient(60% 40% at 50% 50%, color-mix(in srgb, var(--tint) 24%, transparent), transparent 70%), radial-gradient(closest-side, rgba(255,255,255,.12), transparent 60%); mix-blend-mode:screen; animation:aFlash 900ms ease forwards; }
@@ -360,10 +352,10 @@ export default function RatesLevelR1() {
 function LoadingCard() {
   return (
     <div
-      className="relative w-[min(880px,92%)] rounded-3xl p-6 backdrop-blur grid place-items-center gold-glow"
-      style={{ background: "rgba(24,16,8,.55)", border: "1px solid rgba(255,255,255,.08)" }}
+      className="relative w-[min(880px,92%)] rounded-3xl p-6 backdrop-blur grid place-items-center violet-glow"
+      style={{ background: "rgba(14,10,22,.55)", border: "1px solid rgba(255,255,255,.08)" }}
     >
-      <div className="gold-outline" />
+      <div className="violet-outline" />
       <div className="animate-pulse text-sm text-[var(--gx-muted)]">Loading questions…</div>
     </div>
   );
@@ -372,10 +364,10 @@ function LoadingCard() {
 function ErrorCard({ message }: { message: string }) {
   return (
     <div
-      className="relative w-[min(880px,92%)] rounded-3xl p-6 backdrop-blur gold-glow"
-      style={{ background: "rgba(24,16,8,.55)", border: "1px solid rgba(255,128,128,.35)" }}
+      className="relative w-[min(880px,92%)] rounded-3xl p-6 backdrop-blur violet-glow"
+      style={{ background: "rgba(14,10,22,.55)", border: "1px solid rgba(255,128,128,.35)" }}
     >
-      <div className="gold-outline" />
+      <div className="violet-outline" />
       <div className="text-[rgba(255,160,160,.95)] text-sm">Failed to load questions: {message}</div>
     </div>
   );
@@ -408,7 +400,7 @@ function QuestionCard({
     setTimeout(() => setRippling(false), 600);
   };
 
-  // Helpers open: crédit/décrédit
+  // Helpers open: self-check
   const markOpenCorrect = () => {
     if (!openCredited) {
       addOnePoint();
@@ -417,15 +409,14 @@ function QuestionCard({
   };
   const markOpenWrong = () => {
     setOpenCredited(false);
-    // (si tu veux autoriser de retirer un point après l'avoir ajouté, gère un state pour le faire - ici on ne remet pas le score en arrière)
   };
 
   return (
     <div
-      className="relative w-[min(880px,92%)] rounded-3xl p-5 sm:p-6 md:p-7 backdrop-blur gold-glow sparks"
-      style={{ background: "rgba(24,16,8,.55)", border: "1px solid color-mix(in srgb, var(--gx-line) 80%, transparent)" }}
+      className="relative w-[min(880px,92%)] rounded-3xl p-5 sm:p-6 md:p-7 backdrop-blur violet-glow sparks"
+      style={{ background: "rgba(14,10,22,.55)", border: "1px solid color-mix(in srgb, var(--gx-line) 80%, transparent)" }}
     >
-      <div className="gold-outline" />
+      <div className="violet-outline" />
 
       {/* Halo */}
       <span
@@ -438,13 +429,13 @@ function QuestionCard({
         <div className="flex items-center gap-3">
           <Shield color={theme.glow} />
           <div>
-            <div className="font-extrabold tracking-wide" style={{ color: theme.glow }}>LEVEL 1 • RATES</div>
-            <div className="text-[13px] text-[var(--gx-muted)]">Bond foundations</div>
+            <div className="font-extrabold tracking-wide" style={{ color: theme.glow }}>LEVEL 1 • CREDIT</div>
+            <div className="text-[13px] text-[var(--gx-muted)]">Spread foundations</div>
           </div>
         </div>
         <div
           className="px-3 py-1.5 rounded-full text-xs font-bold"
-          style={{ color: "#2b1906", background: `linear-gradient(90deg, ${theme.glow}, #ffd98d)`, boxShadow: `0 0 18px ${theme.glowDim}` }}
+          style={{ color: "#160c22", background: `linear-gradient(90deg, ${theme.glow}, ${THEME.edge})`, boxShadow: `0 0 18px ${theme.glowDim}` }}
         >
           {idx + 1} / {total || 1}
         </div>
@@ -501,14 +492,11 @@ function QuestionCard({
         />
       )}
 
-      {/* Feedback pour OPEN après validation */}
+      {/* Feedback pour OPEN */}
       {q.type === "open" && revealed && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <span className="text-xs text-[var(--gx-muted)]">Self-check:</span>
-          <button
-            className="btn-gold"
-            onClick={markOpenCorrect}
-          >
+          <button className={`btn-violet ${rippling ? "rippling" : ""}`} onClick={markOpenCorrect}>
             <span className="shine" />
             I was correct
           </button>
@@ -532,7 +520,7 @@ function QuestionCard({
         </div>
         {!revealed ? (
           <button
-            className={`btn-gold ${rippling ? "rippling" : ""}`}
+            className={`btn-violet ${rippling ? "rippling" : ""}`}
             onClick={(e) => { triggerRipple(e); onSubmit(); }}
             style={{ ["--rx" as any]: ripPos.x, ["--ry" as any]: ripPos.y }}
           >
@@ -542,7 +530,7 @@ function QuestionCard({
           </button>
         ) : (
           <button
-            className={`btn-gold ${rippling ? "rippling" : ""}`}
+            className={`btn-violet ${rippling ? "rippling" : ""}`}
             onClick={(e) => { triggerRipple(e); onNext(); }}
             style={{ ["--rx" as any]: ripPos.x, ["--ry" as any]: ripPos.y }}
           >
@@ -582,7 +570,7 @@ function Choices({
               disabled={revealed}
               className={[
                 "choice w-full rounded-2xl px-4 py-3 text-left border group relative overflow-hidden",
-                "bg-[rgba(30,22,12,.55)] hover:bg-[rgba(34,24,14,.66)]",
+                "bg-[rgba(20,14,30,.55)] hover:bg-[rgba(24,16,36,.66)]",
                 revealed ? "cursor-default" : "hover:translate-y-[-1px]",
                 revealRight ? "is-correct" : "",
                 revealWrong ? "is-wrong" : "",
@@ -641,7 +629,7 @@ function NumericBox({
   return (
     <div className="flex items-center gap-3">
       <input
-        className="flex-1 rounded-xl px-3 py-2 bg-[rgba(30,22,12,.55)] border outline-none"
+        className="flex-1 rounded-xl px-3 py-2 bg-[rgba(20,14,30,.55)] border outline-none"
         style={{ borderColor: "color-mix(in srgb, var(--gx-line) 82%, transparent)" }}
         value={value}
         disabled={disabled}
@@ -658,7 +646,7 @@ function OpenBox({ theme, value, disabled, onChange }:{
 }) {
   return (
     <textarea
-      className="w-full min-h-28 rounded-xl px-3 py-2 bg-[rgba(30,22,12,.55)] border outline-none"
+      className="w-full min-h-28 rounded-xl px-3 py-2 bg-[rgba(20,14,30,.55)] border outline-none"
       style={{ borderColor: "color-mix(in srgb, var(--gx-line) 82%, transparent)" }}
       placeholder="Your answer..."
       value={value}
@@ -673,12 +661,12 @@ function Shield({ color }: { color: string }) {
     <span className="relative grid place-items-center rounded-xl p-1" style={{ filter: `drop-shadow(0 0 10px ${THEME.glowDim})` }}>
       <svg width="30" height="34" viewBox="0 0 40 44">
         <defs>
-          <linearGradient id="csGrad_or" x1="0" x2="1" y1="0" y2="1">
+          <linearGradient id="csGrad_vi" x1="0" x2="1" y1="0" y2="1">
             <stop offset="0%" stopColor={color} />
-            <stop offset="100%" stopColor="#fff2c4" />
+            <stop offset="100%" stopColor={THEME.edge} />
           </linearGradient>
         </defs>
-        <path d="M20 2 L34 8 V20 C34 29 28 36 20 42 C12 36 6 29 6 20 V8 Z" fill="rgba(0,0,0,.55)" stroke="url(#csGrad_or)" strokeWidth="2" />
+        <path d="M20 2 L34 8 V20 C34 29 28 36 20 42 C12 36 6 29 6 20 V8 Z" fill="rgba(0,0,0,.55)" stroke="url(#csGrad_vi)" strokeWidth="2" />
         <path d="M14 19 L20 25 L26 19" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </span>
@@ -690,8 +678,8 @@ function IdBadge({ id, active, glow }: { id: string; active?: boolean; glow: str
     <span
       className="grid place-items-center w-8 h-8 rounded-xl font-black"
       style={{
-        color: active ? "#2b1906" : "rgba(255,255,255,.85)",
-        background: active ? `linear-gradient(90deg, ${glow}, #ffd98d)` : "rgba(255,255,255,.06)",
+        color: active ? "#160c22" : "rgba(255,255,255,.85)",
+        background: active ? `linear-gradient(90deg, ${glow}, ${THEME.edge})` : "rgba(255,255,255,.06)",
         border: active ? "2px solid transparent" : "1px solid rgba(255,255,255,.15)",
         boxShadow: active ? `0 0 16px color-mix(in srgb, ${glow} 35%, transparent)` : undefined,
       }}

@@ -1,0 +1,108 @@
+{
+  "id": "macro_m1",
+  "biome": "macro",
+  "level": "m1",
+  "title": "LEVEL 1: BUSINESS CYCLE",
+  "subtitle": "Output gap • leading data",
+  "questions": [
+    {
+      "id": "m1_q1",
+      "type": "mcq",
+      "prompt": "Lequel est le MEILLEUR indicateur avancé de l’activité parmi les suivants ?",
+      "options": [
+        { "id": "a", "label": "PMI – nouvelles commandes", "correct": true, "explanation": "Les nouvelles commandes des enquêtes (PMI/ISM) devancent souvent la production réelle." },
+        { "id": "b", "label": "IPC (headline) en g.a.", "explanation": "Plutôt coïncident/retardé." },
+        { "id": "c", "label": "Taux de chômage", "explanation": "Classiquement retardé." },
+        { "id": "d", "label": "Déflateur du PIB", "explanation": "Mesure de prix, pas un indicateur avancé d’activité." }
+      ]
+    },
+    {
+      "id": "m1_q2",
+      "type": "mcq",
+      "prompt": "Un output gap NÉGATIF (PIB < potentiel) implique en général :",
+      "options": [
+        { "id": "a", "label": "Des tensions inflationnistes imminentes", "explanation": "Plutôt l’inverse." },
+        { "id": "b", "label": "Des pressions désinflationnistes", "correct": true, "explanation": "Le slack pèse sur les prix/salaires → désinflation." },
+        { "id": "c", "label": "Une politique monétaire trop restrictive par définition", "explanation": "Pas automatiquement : le gap peut être hérité d’un choc." },
+        { "id": "d", "label": "Une chute mécanique du NAIRU", "explanation": "Le NAIRU n’est pas défini par le niveau cyclique du PIB." }
+      ]
+    },
+    {
+      "id": "m1_q3",
+      "type": "multi",
+      "prompt": "Coche les composantes de la demande globale (optique dépenses) du PIB.",
+      "options": [
+        { "id": "a", "label": "Consommation (C)", "correct": true },
+        { "id": "b", "label": "Investissement (I)", "correct": true },
+        { "id": "c", "label": "Dépenses publiques (G)", "correct": true },
+        { "id": "d", "label": "Exportations nettes (NX)", "correct": true },
+        { "id": "e", "label": "Masse monétaire (M2)" },
+        { "id": "f", "label": "Impôts (T)" }
+      ]
+    },
+    {
+      "id": "m1_q4",
+      "type": "numeric",
+      "prompt": "Règle d’Okun simplifiée : 1 pt de baisse du chômage vs NAIRU ≈ +2 pts de croissance au-dessus du potentiel. Si l’écart de chômage se réduit de 1 pt, quel est l’effet approximatif (en pts) sur la croissance vs potentiel ?",
+      "answer": 2,
+      "units": "pp"
+    },
+    {
+      "id": "m1_q5",
+      "type": "mcq",
+      "prompt": "L’inflation « core » correspond à :",
+      "options": [
+        { "id": "a", "label": "L’IPC total sans logement" },
+        { "id": "b", "label": "L’IPC total sans alimentation et énergie", "correct": true, "explanation": "Définition standard : exclusion food/energy (volatils)." },
+        { "id": "c", "label": "La médiane des variations de prix" },
+        { "id": "d", "label": "Le déflateur du PIB non agricole" }
+      ]
+    },
+    {
+      "id": "m1_q6",
+      "type": "multi",
+      "prompt": "Parmi les indicateurs SUIVANTS, lesquels sont généralement considérés comme AVANCÉS ?",
+      "options": [
+        { "id": "a", "label": "Permis de construire", "correct": true },
+        { "id": "b", "label": "Nouvelles commandes industrielles", "correct": true },
+        { "id": "c", "label": "Cours boursiers (indices actions)", "correct": true },
+        { "id": "d", "label": "Taux de chômage" },
+        { "id": "e", "label": "IPC (headline)" }
+      ]
+    },
+    {
+      "id": "m1_q7",
+      "type": "numeric",
+      "prompt": "Si le taux neutre réel r* = 1,0% et l’inflation attendue = 2,0%, quel est le taux NOMINAL neutre approximatif ?",
+      "answer": 3,
+      "units": "%"
+    },
+    {
+      "id": "m1_q8",
+      "type": "mcq",
+      "prompt": "Une courbe 2s10s INVERSEE est typiquement interprétée comme :",
+      "options": [
+        { "id": "a", "label": "Un signal avancé accru de risque de récession", "correct": true, "explanation": "Historiquement corrélé aux récessions futures." },
+        { "id": "b", "label": "Un signe d’accélération de l’inflation" },
+        { "id": "c", "label": "Un élargissement automatique des spreads de crédit" },
+        { "id": "d", "label": "Une flambée imminente des matières premières" }
+      ]
+    },
+    {
+      "id": "m1_q9",
+      "type": "open",
+      "prompt": "Cite deux canaux par lesquels un QE (achats d’actifs) peut soutenir l’activité réelle."
+    },
+    {
+      "id": "m1_q10",
+      "type": "mcq",
+      "prompt": "Quelle combinaison est la plus classiquement CONTRACYCLIQUE en récession ?",
+      "options": [
+        { "id": "a", "label": "Politique budgétaire restrictive + resserrement monétaire" },
+        { "id": "b", "label": "Relance budgétaire + assouplissement monétaire", "correct": true, "explanation": "Stabilisation : soutien de la demande + coût du capital plus bas." },
+        { "id": "c", "label": "Relance budgétaire + resserrement monétaire" },
+        { "id": "d", "label": "Austérité budgétaire + statu quo monétaire" }
+      ]
+    }
+  ]
+}
