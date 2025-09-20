@@ -1,7 +1,10 @@
+// app/play/biome/rates/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import BackToMapButton from "@/components/BackToMapButton";
+import { Progress } from "@/lib/progress";
 
 const TOPBAR = 64;
 
@@ -11,19 +14,29 @@ const THEME = {
   glowDim: "rgba(255,209,102,.22)",
 };
 
-type Level = { id: string; title: string; subtitle: string; diff: number; locked?: boolean };
+type Level = { id: string; title: string; subtitle: string; diff: number };
 
 const LEVELS: Level[] = [
   { id: "r1", title: "LEVEL 1: BOND FOUNDATIONS", subtitle: "Warm-up • par yield basics", diff: 15 },
-  { id: "r2", title: "LEVEL 2: YIELD RAMP",        subtitle: "Carry & roll • convexity",   diff: 25, locked: true },
-  { id: "r3", title: "LEVEL 3: DURATION SANDS",             subtitle: "DV01 storms & hedges",       diff: 35, locked: true },
-  { id: "r4", title: "LEVEL 4: CURVE TEMPLE",               subtitle: "2s10s rites & butterflies",  diff: 45, locked: true },
-  { id: "r5", title: "LEVEL 5: ELDER YIELD SHRINE",         subtitle: "Perfect run required",       diff: 55, locked: true },
+  { id: "r2", title: "LEVEL 2: YIELD RAMP",        subtitle: "Carry & roll • convexity",   diff: 25 },
+  { id: "r3", title: "LEVEL 3: DURATION SANDS",    subtitle: "DV01 storms & hedges",       diff: 35 },
+  { id: "r4", title: "LEVEL 4: CURVE TEMPLE",      subtitle: "2s10s rites & butterflies",  diff: 45 },
+  { id: "r5", title: "LEVEL 5: ELDER YIELD SHRINE",subtitle: "Perfect run required",       diff: 55 },
 ];
 
+const ORDER = LEVELS.map(l => l.id);
+
 export default function RatesDungeon() {
-  const [selected, setSelected] = useState<string | null>(null);
-  const selLevel = useMemo(() => LEVELS.find(l => l.id === selected) ?? null, [selected]);
+  const router = useRouter();
+
+  // Selection par défaut = 1er niveau jouable
+  const [selected, setSelected] = useState<string>(() =>
+    Progress.firstPlayable("rates", ORDER)
+  );
+  const selLevel = useMemo(
+    () => LEVELS.find(l => l.id === selected) ?? null,
+    [selected]
+  );
 
   // Empêche le scroll global
   useEffect(() => {
@@ -37,7 +50,23 @@ export default function RatesDungeon() {
     };
   }, []);
 
-  // Effet d'arrivée si on vient de la map (sessionStorage.warp posé par la map)
+  // Re-sync quand la progression change (autre onglet / clear d'un level)
+  useEffect(() => {
+    const sync = () =>
+      setSelected(prev =>
+        Progress.isUnlocked("rates", ORDER, prev)
+          ? prev
+          : Progress.firstPlayable("rates", ORDER)
+      );
+    window.addEventListener("storage", sync);
+    window.addEventListener("sigma:progresschange", sync as any);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("sigma:progresschange", sync as any);
+    };
+  }, []);
+
+  // Effet d'arrivée si on vient de la map (FX)
   const [arrivalTint, setArrivalTint] = useState<string | null>(null);
   useEffect(() => {
     try {
@@ -50,10 +79,13 @@ export default function RatesDungeon() {
           setTimeout(() => setArrivalTint(null), 900);
         }
       }
-    } catch {
-      /* noop */
-    }
+    } catch {/* noop */}
   }, []);
+
+  const startSelected = () => {
+    if (!selLevel) return;
+    router.push(`/play/biome/rates/level/${selLevel.id}`);
+  };
 
   return (
     <div className="fixed inset-0 overflow-hidden" style={{ ["--topbar" as any]: `${TOPBAR}px` }}>
@@ -101,17 +133,18 @@ export default function RatesDungeon() {
           <div className="w-[min(680px,92%)] space-y-2 sm:space-y-3">
             {LEVELS.map((lvl) => {
               const isSel = selected === lvl.id;
-              const isLocked = !!lvl.locked;
+              const isUnlocked = Progress.isUnlocked("rates", ORDER, lvl.id);
+              const isCleared = Progress.isCleared("rates", lvl.id);
               return (
                 <button
                   key={lvl.id}
-                  disabled={isLocked}
-                  onClick={() => setSelected(lvl.id)}
+                  disabled={!isUnlocked}
+                  onClick={() => isUnlocked && setSelected(lvl.id)}
                   className={[
                     "group w-full text-left rounded-2xl px-4 sm:px-5 py-3 relative overflow-hidden",
                     "border transition-all duration-200",
                     "backdrop-blur bg-[rgba(24,16,8,.55)] hover:bg-[rgba(28,18,10,.66)]",
-                    isLocked ? "opacity-60 cursor-not-allowed" : "hover:translate-y-[-2px]",
+                    !isUnlocked ? "opacity-60 cursor-not-allowed" : "hover:translate-y-[-2px]",
                   ].join(" ")}
                   style={{
                     borderColor: isSel ? THEME.glow : "color-mix(in srgb, var(--gx-line) 82%, transparent)",
@@ -130,14 +163,16 @@ export default function RatesDungeon() {
                   />
 
                   <div className="flex items-center gap-4">
-                    <LevelShield active={isSel} locked={isLocked} color={THEME.glow} />
+                    <LevelShield active={isSel} locked={!isUnlocked} color={THEME.glow} />
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold tracking-wide truncate">{lvl.title}</div>
+                      <div className="font-semibold tracking-wide truncate">
+                        {lvl.title} {isCleared && <span className="ml-2 text-[10px] align-super text-gold/80">CLEARED</span>}
+                      </div>
                       <div className="text-xs mt-1 opacity-80 text-[var(--gx-muted)] truncate">
                         {lvl.subtitle} • <span className="text-gold">&ge; diff {lvl.diff}</span>
                       </div>
                     </div>
-                    {!isLocked ? (
+                    {isUnlocked ? (
                       <span className="text-xs px-2 py-1 rounded-md border"
                             style={{ borderColor: THEME.glowDim, color: THEME.glow }}>
                         Enter
@@ -160,7 +195,7 @@ export default function RatesDungeon() {
             <button
               className="btn-cta"
               disabled={!selLevel}
-              onClick={() => console.log("Start level:", selLevel?.id)}
+              onClick={startSelected}
               style={{ ["--ctaGlow" as any]: THEME.glow, ["--ctaGlowDim" as any]: THEME.glowDim }}
             >
               {selLevel ? `START • ${selLevel.title}` : "SELECT LEVEL"}
