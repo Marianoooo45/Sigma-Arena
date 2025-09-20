@@ -15,7 +15,7 @@ const THEME = {
 type Level = { id: string; title: string; subtitle: string; diff: number; locked?: boolean };
 
 const LEVELS: Level[] = [
-  { id: "e1", title: "LEVEL 1: PRICE ACTION FORGE",    subtitle: "Momentum vs mean-reversion",   diff: 15, locked: true },
+  { id: "e1", title: "LEVEL 1: PRICE ACTION FORGE",    subtitle: "Momentum vs mean-reversion",   diff: 15},
   { id: "e2", title: "LEVEL 2: FACTOR ARENA",                   subtitle: "Value • Quality • Size mix",    diff: 25, locked: true },
   { id: "e3", title: "LEVEL 3: MICROSTRUCTURE DEPTHS",          subtitle: "Spread • slippage • impact",    diff: 35, locked: true },
   { id: "e4", title: "LEVEL 4: EARNINGS GAUNTLET",              subtitle: "Gaps • post-earnings drift",    diff: 45, locked: true },
@@ -76,7 +76,6 @@ export default function EquityDungeon() {
         placement="top-left"
         size="md"
         topbarHeight={TOPBAR}
-        label="Map"
       />
 
       {/* Contenu centré */}
