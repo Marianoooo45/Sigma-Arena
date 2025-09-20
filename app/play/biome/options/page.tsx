@@ -84,7 +84,7 @@ export default function OptionsDungeon() {
       >
         <div className="text-center mb-1">
           <h1 className="hero-title text-3xl sm:text-4xl tracking-wider" style={{ color: THEME.glow }}>
-            OPTIONS DUNGEON
+            FX & Commodities Dungeon
           </h1>
         </div>
 

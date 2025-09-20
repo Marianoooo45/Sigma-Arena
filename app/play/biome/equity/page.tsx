@@ -86,7 +86,7 @@ export default function EquityDungeon() {
       >
         <div className="text-center mb-1">
           <h1 className="hero-title text-3xl sm:text-4xl tracking-wider" style={{ color: THEME.glow }}>
-            EQUITY DUNGEON
+            Equity Derivatives Dungeon
           </h1>
         </div>
 

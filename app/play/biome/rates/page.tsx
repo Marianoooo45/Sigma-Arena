@@ -87,7 +87,7 @@ export default function RatesDungeon() {
         {/* Titre */}
         <div className="text-center mb-1">
           <h1 className="hero-title text-3xl sm:text-4xl tracking-wider" style={{ color: THEME.glow }}>
-            RATES DUNGEON
+            Rates & Fixed Income Dungeon
           </h1>
         </div>
 

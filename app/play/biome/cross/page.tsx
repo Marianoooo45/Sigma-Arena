@@ -83,7 +83,7 @@ export default function CrossAssetDungeon() {
       >
         <div className="text-center mb-1">
           <h1 className="hero-title text-3xl sm:text-4xl tracking-wider" style={{ color: THEME.glow }}>
-            CROSS-ASSET DUNGEON
+            Quant & Risk Management Dungeon
           </h1>
         </div>
 
