@@ -1,3 +1,4 @@
+// app/play/page.tsx
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -5,8 +6,8 @@ import { useRouter } from "next/navigation";
 
 const TOPBAR_H = 64;
 const MAP_ASPECT = 1920 / 1080;
-const FLY_MS = 1200;       // départ vers un donjon
-const END_FADE_MS = 180;   // fondu noir de sortie (route)
+const FLY_MS = 1200;        // départ vers un donjon
+const END_FADE_MS = 180;    // fondu noir de sortie (route)
 const RETURN_FADE_MS = 260; // fondu d'entrée depuis un donjon
 
 type Biome = { id: string; name: string; x: number; y: number; tint: string };
@@ -20,6 +21,23 @@ const BIOMES: Biome[] = [
   { id: "rates",      name: "Rates & Fixed Income",    x: 38, y: 71, tint: "#ffd166" },
   { id: "quant",      name: "Quant & Risk Management", x: 60, y: 78, tint: "#27e28a" },
 ];
+
+/** Map biome -> background image used in the dungeon screen.
+ *  Update paths if your filenames differ; unknown ones will fallback to `/images/bg_<id>.png`.
+ */
+const DUNGEON_BG: Record<string, string> = {
+  equity: "/images/bg_rouge.png",
+  macro: "/images/bg_blanc.png",
+  credit: "/images/bg_violet.png",
+  structured: "/images/bg_rose.png",
+  fx: "/images/bg_bleu.png",
+  rates: "/images/bg_or.png",           // your current Rates file
+  quant: "/images/bg_vert.png",
+};
+
+function bgFor(id: string) {
+  return DUNGEON_BG[id] ?? `/images/bg_${id}.png`;
+}
 
 function useContainSize(aspect: number) {
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -41,7 +59,6 @@ function useContainSize(aspect: number) {
 
 /* ---------- BIOME-SPECIFIC GLYPHS (inside shield) ---------- */
 function BiomeGlyph({ id }: { id: string }) {
-  // High-contrast glyphs: white stroke with subtle shadow for legibility
   const stroke = "#ffffff";
   const sw = 2.4;
   const common = {
@@ -50,29 +67,23 @@ function BiomeGlyph({ id }: { id: string }) {
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
     fill: "none",
-    filter: "url(#glyphShadow)", // defined per-shield in <defs>
+    filter: "url(#glyphShadow)",
   };
 
   switch (id) {
     case "equity": {
-      // Small sword at ~45° (rotate -45° around center)
+      // small sword ~45°
       return (
         <g transform="rotate(-45 32 28)" {...common}>
-          {/* blade */}
           <path d="M32 16 L32 34" />
-          {/* tip */}
           <path d="M30 14 L32 12 L34 14" />
-          {/* cross-guard */}
           <path d="M27 31 L37 31" />
-          {/* grip + pommel */}
           <path d="M32 34 L32 38" />
           <circle cx="32" cy="39.5" r="1.6" fill={stroke} stroke="none" filter="url(#glyphShadow)" />
         </g>
       );
     }
-
     case "macro": {
-      // Compass rose
       return (
         <g {...common}>
           <circle cx="32" cy="28" r="9" />
@@ -84,9 +95,7 @@ function BiomeGlyph({ id }: { id: string }) {
         </g>
       );
     }
-
     case "credit": {
-      // Scales of credit justice
       return (
         <g {...common}>
           <path d="M22 18 H42" />
@@ -96,9 +105,8 @@ function BiomeGlyph({ id }: { id: string }) {
         </g>
       );
     }
-
     case "structured": {
-      // EXACTLY your previous triangle/chevron (unchanged)
+      // keep your original chevron triangle
       return (
         <path
           d="M24 24 L32 36 L40 24"
@@ -110,9 +118,7 @@ function BiomeGlyph({ id }: { id: string }) {
         />
       );
     }
-
     case "fx": {
-      // Two circular arrows (swap-like)
       return (
         <g {...common}>
           <path d="M27 20 A12 12 0 0 1 44 28" />
@@ -122,9 +128,7 @@ function BiomeGlyph({ id }: { id: string }) {
         </g>
       );
     }
-
     case "rates": {
-      // Yield curve with nodes
       return (
         <g {...common}>
           <path d="M22 36 H42" />
@@ -135,9 +139,7 @@ function BiomeGlyph({ id }: { id: string }) {
         </g>
       );
     }
-
     case "quant": {
-      // Atom / orbital
       return (
         <g {...common}>
           <ellipse cx="32" cy="28" rx="12" ry="6" />
@@ -147,7 +149,6 @@ function BiomeGlyph({ id }: { id: string }) {
         </g>
       );
     }
-
     default:
       return null;
   }
@@ -218,7 +219,7 @@ function ShieldPin({
             filter={`url(#glow-${b.id})`}
           />
 
-          {/* tinted puck: keep EXACT original for 'structured' */}
+          {/* tinted puck; triangle for 'structured' stays exactly as before */}
           <circle
             cx="32"
             cy="28"
@@ -227,7 +228,7 @@ function ShieldPin({
             opacity="0.95"
           />
 
-          {/* biome glyph (triangle unchanged for 'structured') */}
+          {/* biome glyph */}
           <BiomeGlyph id={b.id} />
         </svg>
         <span className="gx-shieldShine" />
@@ -266,6 +267,33 @@ export default function PlayPage() {
 
   const frameRef = useRef<HTMLDivElement | null>(null);
   const lightRef = useRef<HTMLDivElement | null>(null);
+
+  /* ---------- NEW: prefetch routes + preload dungeon backgrounds ---------- */
+  useEffect(() => {
+    // Prefetch next routes for instant navigation
+    BIOMES.forEach((b) => {
+      const href = b.id === "cross" ? "/play/biome/cross" : `/play/biome/${b.id}`;
+      try { router.prefetch(href); } catch {}
+    });
+
+    // Preload & decode dungeon background images while idling on the map
+    const urls = BIOMES.map((b) => bgFor(b.id));
+    const preload = (src: string) =>
+      new Promise<void>((resolve) => {
+        const img = new Image();
+        (img as any).fetchPriority = "low";
+        img.decoding = "async";
+        img.loading = "eager";
+        img.src = src;
+        const done = () => resolve();
+        img.onload = done; img.onerror = done;
+      });
+
+    // Use requestIdleCallback if available to not block the main thread
+    const kick = () => { urls.forEach((u) => { preload(u); }); };
+    (window as any).requestIdleCallback ? (window as any).requestIdleCallback(kick, { timeout: 1200 }) : setTimeout(kick, 0);
+  }, [router]);
+  /* ----------------------------------------------------------------------- */
 
   /* cursor light */
   useEffect(() => {
@@ -315,10 +343,7 @@ export default function PlayPage() {
 
     // Pose un flag pour l’anim d’arrivée côté donjon
     try {
-      sessionStorage.setItem(
-        "warp",
-        JSON.stringify({ tint: b.tint, ts: Date.now(), fadeMs: 220 })
-      );
+      sessionStorage.setItem("warp", JSON.stringify({ tint: b.tint, ts: Date.now(), fadeMs: 220 }));
     } catch {}
 
     const relX = ((e.clientX - r.left) / r.width) * 100;
