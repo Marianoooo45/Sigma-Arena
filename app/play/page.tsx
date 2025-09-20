@@ -12,13 +12,13 @@ const RETURN_FADE_MS = 260; // fondu d'entrée depuis un donjon
 type Biome = { id: string; name: string; x: number; y: number; tint: string };
 
 const BIOMES: Biome[] = [
-  { id: "equity",     name: "Equity",              x: 51, y: 24, tint: "var(--gx-red)" },
-  { id: "macro",      name: "Macro",               x: 39, y: 37, tint: "#e5e7eb" },
-  { id: "credit",     name: "Credit",              x: 65, y: 32, tint: "var(--gx-purple)" },
+  { id: "equity",     name: "Equity Derivatives",              x: 51, y: 24, tint: "var(--gx-red)" },
+  { id: "macro",      name: "Macro & Economics",               x: 39, y: 37, tint: "#e5e7eb" },
+  { id: "credit",     name: "Credit Derivatives",              x: 65, y: 32, tint: "var(--gx-purple)" },
   { id: "structured", name: "Structured Products", x: 68, y: 50, tint: "var(--gx-magenta)" },
-  { id: "options",    name: "Options",             x: 51, y: 52, tint: "var(--gx-cyan)" },
-  { id: "rates",      name: "Rates",               x: 38, y: 71, tint: "#ffd166" },
-  { id: "cross",      name: "Cross-Asset",         x: 60, y: 78, tint: "#27e28a" },
+  { id: "options",    name: "FX & Commodities",             x: 51, y: 52, tint: "var(--gx-cyan)" },
+  { id: "rates",      name: "Rates & Fixed Income",               x: 38, y: 71, tint: "#ffd166" },
+  { id: "cross",      name: "Quant & Risk Management",         x: 60, y: 78, tint: "#27e28a" },
 ];
 
 function useContainSize(aspect: number) {
