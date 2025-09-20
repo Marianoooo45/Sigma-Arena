@@ -1,69 +1,75 @@
-// app/api/questions/import/route.ts
+// app/api/game/questions/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import db, { ensureMasteryAndActivity } from "@/lib/db";
+import db from "@/lib/db";
 
-type QItem = {
-  category: string;           // ex: "Rates (Swaps)" ou "Equity/Black-Scholes"
-  type: "MCQ" | "short" | "calc";
-  prompt: string;
-  choices?: string[] | null;  // pour MCQ
-  answer: number | string;    // index pour MCQ, string sinon
-  difficulty?: number;        // 0..1
-};
+function loadQuestionsForCategory(catId: number, n: number, dmin?: number, dmax?: number) {
+  const hasRange = typeof dmin === "number" && typeof dmax === "number";
+  const rows = db.prepare(
+    `
+    SELECT
+      q.id,
+      q.category_id,
+      c.name AS category_name,
+      q.type,
+      q.prompt,
+      q.choices,
+      q.answer,
+      q.difficulty
+    FROM questions q
+    JOIN categories c ON c.id = q.category_id
+    WHERE q.category_id = ?
+      ${hasRange ? "AND q.difficulty BETWEEN ? AND ?" : ""}
+    ORDER BY RANDOM()
+    LIMIT ?
+  `
+  ).all(
+    ...(hasRange ? [catId, dmin, dmax, n] : [catId, n])
+  );
 
-function getOrCreateCategoryPath(path: string) {
-  // support "Parent/Child/GrandChild"
-  const parts = path.split("/").map(s => s.trim()).filter(Boolean);
-  let parentId: number | null = null;
-  for (const name of parts) {
-    const row = db.prepare(
-      `SELECT id FROM categories WHERE name=? AND ${parentId===null?"parent_id IS NULL":"parent_id=?"}`
-    ).get(parentId===null ? [name] : [name, parentId]) as {id:number} | undefined;
-
-    if (row?.id) {
-      parentId = row.id;
-    } else {
-      const target = 0.0; // sera ajusté via Settings > normalisation
-      const res = db.prepare(
-        `INSERT INTO categories(name, parent_id, target_weight) VALUES (?,?,?)`
-      ).run(name, parentId, target);
-      parentId = Number(res.lastInsertRowid);
-      ensureMasteryAndActivity(parentId);
-    }
-  }
-  return parentId as number; // id final (dernier niveau)
+  return rows.map((r: any) => ({
+    ...r,
+    choices: r.choices ?? null,
+    answer: typeof r.answer === "string" ? r.answer : JSON.stringify(r.answer),
+  }));
 }
 
-export async function POST(req: NextRequest) {
-  let payload: QItem[] = [];
-  try {
-    payload = await req.json();
-    if (!Array.isArray(payload)) throw new Error("Payload must be an array");
-  } catch (e:any) {
-    return NextResponse.json({ ok:false, error: "Invalid JSON body: "+e.message }, { status: 400 });
+export async function GET(req: NextRequest) {
+  const url = new URL(req.url);
+  const nParam = url.searchParams.get("n");
+  const ids = url.searchParams.getAll("category_id");
+  const n = Math.max(1, Math.min(100, Number(nParam ?? 12)));
+
+  if (ids.length === 0) {
+    return NextResponse.json(
+      { ok: false, error: "Missing category_id" },
+      { status: 400 }
+    );
   }
 
-  let created = 0;
-  let skipped = 0;
+  const dmin = url.searchParams.has("difficulty_min")
+    ? Math.max(0, Math.min(1, Number(url.searchParams.get("difficulty_min"))))
+    : undefined;
+  const dmax = url.searchParams.has("difficulty_max")
+    ? Math.max(0, Math.min(1, Number(url.searchParams.get("difficulty_max"))))
+    : undefined;
 
-  const insert = db.prepare(`
-    INSERT INTO questions(category_id, type, prompt, choices, answer, difficulty)
-    VALUES (?,?,?,?,?,?)
-  `);
+  if ((dmin !== undefined || dmax !== undefined) && !(typeof dmin === "number" && typeof dmax === "number" && dmin <= dmax)) {
+    return NextResponse.json({ ok:false, error:"invalid difficulty range" }, { status: 400 });
+  }
 
-  const tx = db.transaction((items: QItem[]) => {
-    for (const it of items) {
-      if (!it.category || !it.type || !it.prompt || it.answer===undefined) { skipped++; continue; }
-      const catId = getOrCreateCategoryPath(it.category);
-      const ch = it.choices ? JSON.stringify(it.choices) : null;
-      const ans = JSON.stringify(it.answer);
-      const diff = typeof it.difficulty === "number" ? Math.min(1, Math.max(0, it.difficulty)) : 0.5;
-      insert.run(catId, it.type, it.prompt, ch, ans, diff);
-      created++;
-    }
-  });
+  const perCat = Math.max(1, Math.ceil(n / ids.length));
+  const all: any[] = [];
+  for (const id of ids) {
+    const catId = Number(id);
+    if (!Number.isFinite(catId)) continue;
+    all.push(...loadQuestionsForCategory(catId, perCat, dmin, dmax));
+  }
 
-  tx(payload);
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [all[i], all[j]] = [all[j], all[i]];
+  }
 
-  return NextResponse.json({ ok:true, created, skipped });
+  const questions = all.slice(0, n);
+  return NextResponse.json({ questions });
 }

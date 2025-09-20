@@ -1,24 +1,28 @@
 // app/api/categories/route.ts
-import { NextRequest, NextResponse } from "next/server";
-import db, { ensureMasteryAndActivity } from "@/lib/db";
+import { NextResponse } from "next/server";
+import db from "@/lib/db";
 
 export async function GET() {
+  // Compte le nombre de questions par catégorie (zéro si aucune)
   const rows = db.prepare(`
-    SELECT c.*, COALESCE(m.rating,50.0) AS rating
+    SELECT
+      c.id,
+      c.parent_id,
+      c.name,
+      c.target_weight,
+      c.active,
+      COALESCE(m.rating, 50.0)      AS rating,
+      COALESCE(a.ema_activity, 0.0) AS ema_activity,
+      (
+        SELECT COUNT(1) FROM questions q
+        WHERE q.category_id = c.id
+      ) AS question_count
     FROM categories c
-    LEFT JOIN mastery m ON m.category_id=c.id
-    ORDER BY (CASE WHEN parent_id IS NULL THEN 0 ELSE 1 END), name
+    LEFT JOIN mastery m        ON m.category_id = c.id
+    LEFT JOIN activity_rollup a ON a.category_id = c.id
+    WHERE c.active = 1
+    ORDER BY (CASE WHEN c.parent_id IS NULL THEN 0 ELSE 1 END), c.name
   `).all();
-  return NextResponse.json(rows);
-}
 
-export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const { name, parent_id=null, target_weight=0.0 } = body;
-  const res = db.prepare(`
-    INSERT INTO categories(name, parent_id, target_weight) VALUES (?,?,?)
-  `).run(name, parent_id, target_weight);
-  const id = Number(res.lastInsertRowid);
-  ensureMasteryAndActivity(id);
-  return NextResponse.json({ id });
+  return NextResponse.json(rows);
 }

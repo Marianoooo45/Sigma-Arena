@@ -1,595 +1,593 @@
-// app/play/page.tsx
 "use client";
+
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
-/* ================== Types ================== */
-type Cat = { id:number; name:string; parent_id:number|null; question_count:number };
-type Q = {
-  id:number; category_id:number; category_name:string;
-  type:"MCQ"|"short"|"calc"|string; prompt:string; choices:string|null; answer:string; difficulty:number;
-};
+const TOPBAR_H = 64;
+const MAP_ASPECT = 1920 / 1080;
+const FLY_MS = 1200;       // départ vers un donjon
+const END_FADE_MS = 180;   // fondu noir de sortie (route)
+const RETURN_FADE_MS = 260; // fondu d'entrée depuis un donjon
 
-type Skill = { level:number; xp:number; next:number };
-type Profile = {
-  level:number; xp:number; next:number; gold:number; bestStreak:number;
-  skills: Record<string, Skill>;                 // par catId
-};
-type Quest = {
-  id:string;
-  title:string;
-  desc:string;
-  target:number;
-  progress:number;
-  rewardXP:number;       // xp global
-  rewardGold:number;
-  catId?: number;        // optionnel, lié à une catégorie
-};
-type Daily = { date:string; quests: Quest[]; claimed: string[] };
+type Biome = { id: string; name: string; x: number; y: number; tint: string };
 
-/* ================== Constantes ================== */
-const SPEED_T1 = 3000;         // <3s => +2
-const SPEED_T2 = 6000;         // <6s => +1
-const MAX_COMBO = 5;
+const BIOMES: Biome[] = [
+  { id: "equity",     name: "Equity",              x: 51, y: 24, tint: "var(--gx-red)" },
+  { id: "macro",      name: "Macro",               x: 39, y: 37, tint: "#e5e7eb" },
+  { id: "credit",     name: "Credit",              x: 65, y: 32, tint: "var(--gx-purple)" },
+  { id: "structured", name: "Structured Products", x: 68, y: 50, tint: "var(--gx-magenta)" },
+  { id: "options",    name: "Options",             x: 51, y: 52, tint: "var(--gx-cyan)" },
+  { id: "rates",      name: "Rates",               x: 38, y: 71, tint: "#ffd166" },
+  { id: "cross",      name: "Cross-Asset",         x: 60, y: 78, tint: "#27e28a" },
+];
 
-/* ——— XP / courbe ——— */
-const XP_PER_CORRECT = 10;          // base XP global
-const XP_SKILL_PER_CORRECT = 8;     // base XP de compétence
-function xpNeeded(level:number){ return Math.floor(100 * Math.pow(level, 1.35)); }
-
-/* ================== Storage helpers ================== */
-const profileKey = "rpg_profile_v1";
-const dayKey = () => `rpg_daily_${new Date().toISOString().slice(0,10)}`;
-
-function loadProfile(): Profile {
-  try {
-    const raw = localStorage.getItem(profileKey);
-    if (!raw) return { level:1, xp:0, next:xpNeeded(1), gold:0, bestStreak:0, skills:{} };
-    const p = JSON.parse(raw);
-    if (!p.skills) p.skills = {};
-    if (!p.level) p.level = 1;
-    if (!p.next) p.next = xpNeeded(p.level || 1);
-    if (typeof p.gold !== "number") p.gold = 0;
-    if (typeof p.bestStreak !== "number") p.bestStreak = 0;
-    return p as Profile;
-  } catch {
-    return { level:1, xp:0, next:xpNeeded(1), gold:0, bestStreak:0, skills:{} };
-  }
-}
-function saveProfile(p:Profile){ localStorage.setItem(profileKey, JSON.stringify(p)); }
-
-function newDaily(cats:Cat[]): Daily {
-  const rand = (arr:any[]) => arr[Math.floor(Math.random()*arr.length)];
-  const top = cats.filter(c=>c.parent_id===null);
-  const pick = top.length ? rand(top) : { id:0, name:"Any" };
-  const quests: Quest[] = [
-    { id:"cat-"+pick.id, title:`Maîtrise ${pick.name}`, desc:`Réponds juste 5 fois dans ${pick.name}`, target:5, progress:0, rewardXP:120, rewardGold:30, catId: pick.id },
-    { id:"streak-3", title:"Série brûlante", desc:"Atteins un streak de 3", target:3, progress:0, rewardXP:100, rewardGold:20 },
-    { id:"speed-5", title:"Éclair", desc:"Fais 5 réponses < 3s", target:5, progress:0, rewardXP:140, rewardGold:25 },
-  ];
-  return { date: new Date().toISOString().slice(0,10), quests, claimed: [] };
-}
-function loadDaily(cats:Cat[]): Daily {
-  try {
-    const raw = localStorage.getItem(dayKey());
-    if (!raw) { const d = newDaily(cats); localStorage.setItem(dayKey(), JSON.stringify(d)); return d; }
-    const d = JSON.parse(raw) as Daily;
-    if (!d.quests) { const nd = newDaily(cats); localStorage.setItem(dayKey(), JSON.stringify(nd)); return nd; }
-    return d;
-  } catch {
-    const d = newDaily(cats); localStorage.setItem(dayKey(), JSON.stringify(d)); return d;
-  }
-}
-function saveDaily(d:Daily){ localStorage.setItem(dayKey(), JSON.stringify(d)); }
-
-/* ================== Mini synth + confetti ================== */
-function beep(ok:boolean){
-  try{
-    const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
-    const ctx = new Ctx();
-    const o = ctx.createOscillator(); const g = ctx.createGain();
-    o.type = ok? "triangle":"square";
-    o.frequency.value = ok? 920: 180;
-    g.gain.value = 0.0001; o.connect(g); g.connect(ctx.destination); o.start();
-    const t = ctx.currentTime;
-    g.gain.exponentialRampToValueAtTime(ok?0.0015:0.002, t+0.01);
-    g.gain.exponentialRampToValueAtTime(0.00001, t+0.22);
-    o.stop(t+0.23);
-  }catch{}
-}
-function confetti(el: HTMLElement, color?: string){
-  for(let i=0;i<18;i++){
-    const s = document.createElement("span");
-    s.className = "confetti"; if (color) s.style.background = color;
-    const a = (Math.PI*2)*(i/18) + (Math.random()*0.3);
-    const d = 60 + Math.random()*40;
-    s.style.setProperty("--x", `${Math.cos(a)*d}px`);
-    s.style.setProperty("--y", `${Math.sin(a)*d - 28}px`);
-    s.style.setProperty("--r", `${Math.random()*360}deg`);
-    el.appendChild(s); setTimeout(()=>s.remove(), 700);
-  }
-}
-
-/* ================== Art / Icons par thème ================== */
-function artFor(name:string){
-  const lower = name.toLowerCase();
-  if (lower.includes("struct")) return { emoji:"🏰", bg:"linear-gradient(120deg,#3a1020,#0e0e1a)", halo:"#ff4d8a" };
-  if (lower.includes("equity")) return { emoji:"⚔️", bg:"linear-gradient(120deg,#1a0e10,#0e0e1a)", halo:"#ff0033" };
-  if (lower.includes("fixed") || lower.includes("bond")) return { emoji:"🛡️", bg:"linear-gradient(120deg,#101425,#0e0e1a)", halo:"#5a7cff" };
-  if (lower.includes("black") || lower.includes("scholes") || lower.includes("option")) return { emoji:"📜", bg:"linear-gradient(120deg,#150e1e,#0e0e1a)", halo:"#a06bff" };
-  if (lower.includes("rates") || lower.includes("swap")) return { emoji:"🌀", bg:"linear-gradient(120deg,#0f1620,#0e0e1a)", halo:"#21d4fd" };
-  return { emoji:"🎯", bg:"linear-gradient(120deg,#161616,#0e0e1a)", halo:"#ff3355" };
-}
-
-/* ================== Page ================== */
-export default function PlayPage(){
-  const [cats,setCats] = useState<Cat[]>([]);
-  const [loadingCats,setLoadingCats] = useState(true);
-
-  // Profile & Daily
-  const [profile,setProfile] = useState<Profile>(()=>loadProfile());
-  const [daily,setDaily] = useState<Daily>({ date:"", quests:[], claimed:[] });
-
-  // Map / Region selection
-  const [region,setRegion] = useState<Cat|null>(null);
-  const [openRegion,setOpenRegion] = useState(false);
-  const [selectedSubs,setSelectedSubs] = useState<number[]>([]);
-  const [questionCount,setQuestionCount] = useState(20);
-
-  // Game state
-  const [mode,setMode] = useState<"map"|"play"|"summary">("map");
-  const [qs,setQs] = useState<Q[]>([]);
-  const [i,setI] = useState(0);
-  const [answered,setAnswered] = useState<null|boolean>(null);
-  const [streak,setStreak] = useState(0);
-  const [combo,setCombo] = useState(1);
-  const [shake,setShake] = useState(false);
-  const [transitionKey,setTransitionKey] = useState(0);
-  const [floatXP,setFloatXP] = useState<number|null>(null);
-  const [floatGold,setFloatGold] = useState<number|null>(null);
-
-  const startRef = useRef<number>(0);
-  const arenaRef = useRef<HTMLDivElement>(null);
-
-  /* --------- Init data --------- */
-  useEffect(()=>{
-    fetch("/api/game/categories").then(r=>r.json()).then((d:Cat[])=>{
-      const usable = d.filter(x=>x.question_count>0 || x.parent_id===null); // on garde les régions mêmes sans questions pour la structure
-      setCats(usable);
-      setLoadingCats(false);
-      setDaily(loadDaily(usable));
-    });
-  },[]);
-
-  /* --------- Utils --------- */
-  function ensureSkill(catId:number): Skill {
-    const k = String(catId);
-    return profile.skills[k] ?? { level:1, xp:0, next:xpNeeded(1) };
-  }
-  function isMCQ(q:Q): q is Q & { choices: string }{
-    return !!q.choices && q.type.toUpperCase()==="MCQ";
-  }
-  function addXPGlobal(amount:number){
-    if (amount<=0) return;
-    setProfile(prev=>{
-      let { level, xp, next, gold, bestStreak, skills } = prev;
-      xp += amount;
-      while (xp >= next){ xp -= next; level += 1; next = xpNeeded(level); }
-      const p = { level, xp, next, gold, bestStreak, skills } as Profile;
-      saveProfile(p); return p;
-    });
-  }
-  function addXPSkill(catId:number, amount:number){
-    if (amount<=0) return;
-    const k = String(catId);
-    setProfile(prev=>{
-      const s = { ...prev.skills };
-      const base = s[k] ?? { level:1, xp:0, next:xpNeeded(1) };
-      let { level, xp, next } = base;
-      xp += amount;
-      while (xp >= next){ xp -= next; level += 1; next = xpNeeded(level); }
-      s[k] = { level, xp, next };
-      const p = { ...prev, skills: s };
-      saveProfile(p); return p;
-    });
-  }
-  function addGold(amount:number){
-    if (amount<=0) return;
-    setProfile(prev=>{ const p={...prev, gold: prev.gold + amount }; saveProfile(p); return p; });
-  }
-  function updateBestStreak(s:number){
-    setProfile(prev=>{
-      if (s <= prev.bestStreak) return prev;
-      const p = { ...prev, bestStreak: s }; saveProfile(p); return p;
-    });
-  }
-
-  /* --------- Hierarchie catégories --------- */
-  const regions = useMemo(()=> cats.filter(c=>c.parent_id===null), [cats]);
-  function subcatsOf(parentId:number){ return cats.filter(c=>c.parent_id===parentId); }
-
-  /* --------- Ouvrir une région (sélection des donjons) --------- */
-  function openRegionSelector(r:Cat){
-    setRegion(r);
-    const subs = subcatsOf(r.id);
-    setSelectedSubs(subs.map(s=>s.id)); // par défaut: tout sélectionné
-    setOpenRegion(true);
-  }
-  function toggleSub(id:number){
-    setSelectedSubs(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id]);
-  }
-  function selectAllSubs(){
-    if (!region) return;
-    const all = subcatsOf(region.id).map(s=>s.id);
-    setSelectedSubs(all);
-  }
-  function clearSubs(){ setSelectedSubs([]); }
-
-  /* --------- Lancer la run (support multi sous-cats) --------- */
-  async function startRun(){
-    if (!region) return;
-    setOpenRegion(false);
-    const chosenIds = selectedSubs.length ? selectedSubs : [region.id];
-    // fetch questions de chaque id et merge
-    const promises = chosenIds.map(cid =>
-      fetch(`/api/game/questions?category_id=${cid}&n=${Math.ceil(questionCount/chosenIds.length)}`).then(r=>r.json())
-    );
-    const packs = await Promise.all(promises);
-    const merged: Q[] = packs.flatMap(p=>p.questions || []);
-    // shuffle simple
-    for (let i=merged.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [merged[i],merged[j]]=[merged[j],merged[i]]; }
-    setQs(merged);
-    setI(0); setAnswered(null); setStreak(0); setCombo(1);
-    setMode("play"); setTransitionKey(k=>k+1);
-    startRef.current = performance.now();
-  }
-
-  /* --------- Quêtes --------- */
-  function markQuests(correct:boolean, elapsed:number, catId:number){
-    setDaily(prev=>{
-      const d:Daily = JSON.parse(JSON.stringify(prev));
-      for (const q of d.quests){
-        if (q.id==="streak-3"){
-          if (correct && streak+1 > q.progress) q.progress = Math.min(q.target, streak+1);
-        }
-        if (q.id==="speed-5" && correct && elapsed < SPEED_T1){
-          q.progress = Math.min(q.target, q.progress+1);
-        }
-        if (q.id.startsWith("cat-") && q.catId === catId && correct){
-          q.progress = Math.min(q.target, q.progress+1);
-        }
-      }
-      saveDaily(d); return d;
-    });
-  }
-  function claimQuest(q:Quest){
-    if (daily.claimed.includes(q.id)) return;
-    setDaily(prev=>{ const nd={...prev, claimed:[...prev.claimed, q.id]}; saveDaily(nd); return nd; });
-    addXPGlobal(q.rewardXP);
-    addGold(q.rewardGold);
-    setFloatXP(q.rewardXP); setTimeout(()=>setFloatXP(null), 1000);
-    setFloatGold(q.rewardGold); setTimeout(()=>setFloatGold(null), 1000);
-    if (arenaRef.current) confetti(arenaRef.current);
-  }
-
-  /* --------- Réponse / scoring --------- */
-  function handleAnswer(correct:boolean){
-    if (answered !== null) return;
-    setAnswered(correct);
-    beep(correct);
-
-    const elapsed = performance.now() - startRef.current;
-    startRef.current = performance.now();
-
-    if (correct){
-      if (arenaRef.current) confetti(arenaRef.current);
-      const speedBonus = elapsed < SPEED_T1 ? 2 : (elapsed < SPEED_T2 ? 1 : 0);
-      const streakBonus = Math.floor((streak+1)/5);
-      const xpGlobal = XP_PER_CORRECT + speedBonus*4 + streakBonus*3;
-      const xpSkill = XP_SKILL_PER_CORRECT + speedBonus*3;
-
-      addXPGlobal(xpGlobal);
-      addXPSkill(qs[i].category_id, xpSkill);
-
-      setFloatXP(xpGlobal); setTimeout(()=>setFloatXP(null), 800);
-
-      setStreak(s=>{
-        const ns = s+1;
-        updateBestStreak(ns);
-        setCombo(c => Math.min(MAX_COMBO, c + (ns%3===0 ? 1 : 0)));
-        return ns;
-      });
-
-      markQuests(true, elapsed, qs[i].category_id);
-    } else {
-      if (arenaRef.current) confetti(arenaRef.current, "linear-gradient(120deg,#2f2f3a,#3a3a45)");
-      setStreak(0); setCombo(1);
-      markQuests(false, elapsed, qs[i].category_id);
-      setShake(true); setTimeout(()=>setShake(false), 450);
-    }
-  }
-  function next(){
-    if (i < qs.length-1){
-      setI(i+1); setAnswered(null); setTransitionKey(k=>k+1);
-    } else {
-      setMode("summary");
-    }
-  }
-
-  // Keybindings
-  useEffect(()=>{
-    if (mode!=="play") return;
-    const onKey = (e:KeyboardEvent)=>{
-      const q = qs[i]; if (!q) return;
-      if (e.key === "Enter"){ if (answered!==null) next(); return; }
-      if (isMCQ(q)){
-        const arr = JSON.parse(q.choices) as string[];
-        const num = Number(e.key);
-        if (Number.isInteger(num) && num>=1 && num<=Math.min(9,arr.length)){
-          const correctIndex = JSON.parse(q.answer) as number;
-          handleAnswer((num-1)===correctIndex);
-        }
-      }
+function useContainSize(aspect: number) {
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  useEffect(() => {
+    const calc = () => {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight - TOPBAR_H;
+      const wFromH = vh * aspect;
+      const hFromW = vw / aspect;
+      if (wFromH <= vw) setSize({ w: Math.round(wFromH), h: Math.round(vh) });
+      else setSize({ w: Math.round(vw), h: Math.round(hFromW) });
     };
-    window.addEventListener("keydown", onKey);
-    return ()=>window.removeEventListener("keydown", onKey);
-  },[mode, i, qs, answered]);
+    calc();
+    window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
+  }, [aspect]);
+  return size;
+}
 
-  const progressQ = useMemo(()=> qs.length ? (i/qs.length) : 0, [i, qs.length]);
+/* ---------- PIN ---------- */
+function ShieldPin({
+  b,
+  onClick,
+  onHover,
+}: {
+  b: Biome;
+  onClick: (e: React.MouseEvent, b: Biome) => void;
+  onHover: (b: Biome | null) => void;
+}) {
+  const sparks = Array.from({ length: 6 });
 
-  /* ================== UI ================== */
   return (
-    <div className="space-y-8">
-      {/* HERO / HUD RPG */}
-      <div className="card glass-border p-4 md:p-6 animate-float relative overflow-hidden">
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <div className="h-14 w-14 rounded-2xl neon flex items-center justify-center" style={{background:"linear-gradient(120deg,#ff0033,#ff4d8a)"}}>
-              <svg width="24" height="24" viewBox="0 0 24 24" className="drop-shadow">
-                <path d="M4 20l4-4M8 16l5-5 2 2-5 5M15 9l2-2 2 2-2 2-2-2Z" stroke="white" strokeWidth="2" fill="none"/>
-              </svg>
-            </div>
-            <div className="absolute -bottom-2 -right-2 bg-black/60 rounded-xl px-2 py-1 text-xs border border-[var(--gx-line)]">
-              lvl {profile.level}
-            </div>
-          </div>
+    <button
+      onClick={(e) => onClick(e, b)}
+      onMouseEnter={() => onHover(b)}
+      onMouseLeave={() => onHover(null)}
+      className="gx-pin"
+      style={
+        {
+          left: `${b.x}%`,
+          top: `${b.y}%`,
+          transform: "translate(-50%,-50%)",
+          ["--tint" as any]: b.tint,
+        } as React.CSSProperties
+      }
+      aria-label={b.name}
+      title={b.name}
+    >
+      <span className="gx-pin__halo" />
+      <span className="gx-pin__ring r1" />
+      <span className="gx-pin__ring r2" />
+      <span className="gx-pin__ring r3" />
+      <span className="gx-pin__ring r4" />
 
-          <div className="flex-1">
-            <div className="text-xl font-extrabold tracking-wide hero-title">World Map — Arcane Markets</div>
-            <div className="mt-2 progress h-3">
-              <div className="progress-bar transition-all" style={{ width: `${Math.round((profile.xp/profile.next)*100)}%` }} />
-            </div>
-            <div className="mt-1 text-xs text-[var(--gx-muted)]">
-              XP {profile.xp}/{profile.next} • Or {profile.gold} • Best streak {profile.bestStreak}
-            </div>
-          </div>
+      <span className="gx-shieldWrap">
+        <svg viewBox="0 0 64 64" className="gx-pin__shield">
+          <defs>
+            <linearGradient id={`g-${b.id}`} x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0%" stopColor="var(--tint)" />
+              <stop offset="100%" stopColor="#ffffff" />
+            </linearGradient>
+            <filter id={`glow-${b.id}`} x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="2.2" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          <path
+            d="M32 4 L54 12 V28 C54 46 43 56 32 60 C21 56 10 46 10 28 V12 Z"
+            fill="rgba(8,8,14,.72)"
+            stroke="color-mix(in srgb, var(--tint) 55%, #fff 0%)"
+            strokeWidth="2.5"
+            filter={`url(#glow-${b.id})`}
+          />
+          <circle cx="32" cy="28" r="10" fill={`url(#g-${b.id})`} />
+          <path
+            d="M24 24 L32 36 L40 24"
+            stroke="#0b0b12"
+            strokeWidth="3.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <span className="gx-shieldShine" />
+      </span>
 
-          {/* Quêtes (mini) */}
-          <div className="hidden lg:flex gap-2">
-            {daily.quests.map(q=>{
-              const done = q.progress>=q.target;
-              const claimed = daily.claimed.includes(q.id);
-              return (
-                <div key={q.id} className={`px-3 py-2 rounded-xl border text-xs ${done ? "border-neon" : "border-[var(--gx-line)]"} bg-[#14141e] w-56`}>
-                  <div className="font-semibold mb-1">{q.title}</div>
-                  <div className="progress h-2 mb-1">
-                    <div className="progress-bar" style={{ width: `${Math.round((q.progress/q.target)*100)}%` }} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[var(--gx-muted)]">{q.progress}/{q.target}</span>
-                    {done && !claimed ? (
-                      <button className="btn btn-primary px-2 py-1 text-xs" onClick={()=>claimQuest(q)}>Réclamer</button>
-                    ) : claimed ? <span className="badge">Réclamé</span> : <span className="badge">+{q.rewardXP}xp · {q.rewardGold}⚱</span>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+      <span className="gx-pin__sparks">
+        {sparks.map((_, i) => (
+          <i key={i} style={{ ["--i" as any]: i }} />
+        ))}
+      </span>
 
-        {(floatXP!==null || floatGold!==null) && (
-          <div className="absolute right-3 top-3 space-y-1 text-sm">
-            {floatXP!==null && <div className="badge animate-glow">+{floatXP} XP</div>}
-            {floatGold!==null && <div className="badge animate-glow">+{floatGold} ⚱</div>}
-          </div>
-        )}
+      <span className="gx-pin__label">{b.name}</span>
+    </button>
+  );
+}
+
+/* ---------- PAGE ---------- */
+export default function PlayPage() {
+  const { w, h } = useContainSize(MAP_ASPECT);
+  const [hovered, setHovered] = useState<Biome | null>(null);
+
+  const [fly, setFly] = useState<null | {
+    ox: number; oy: number;   // % origin
+    px: number; py: number;   // px click for FX
+    angle: number;            // deg
+    tint: string; href: string;
+  }>(null);
+  const [curtain, setCurtain] = useState(false); // -> rideau noir de fin
+
+  // Anim de RETOUR depuis un donjon
+  const [landing, setLanding] = useState<null | { x:number; y:number; tint:string; angle:number }>(null);
+  const [enterCurtain, setEnterCurtain] = useState(false);
+
+  const router = useRouter();
+  const sizesAttr = useMemo(() => (w ? `${w}px` : "100vw"), [w]);
+
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const lightRef = useRef<HTMLDivElement | null>(null);
+
+  /* cursor light */
+  useEffect(() => {
+    const f = frameRef.current, l = lightRef.current;
+    if (!f || !l) return;
+    const move = (e: MouseEvent) => {
+      const r = f.getBoundingClientRect();
+      l.style.setProperty("--x", `${((e.clientX - r.left) / r.width) * 100}%`);
+      l.style.setProperty("--y", `${((e.clientY - r.top) / r.height) * 100}%`);
+    };
+    f.addEventListener("mousemove", move);
+    f.addEventListener("mouseleave", () => {
+      l.style.setProperty("--x", "50%");
+      l.style.setProperty("--y", "50%");
+    });
+    return () => f.removeEventListener("mousemove", move);
+  }, []);
+
+  // Lecture du token de retour (posé par BackToMapButton dans le donjon)
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("returnWarp");
+      if (!raw) return;
+      sessionStorage.removeItem("returnWarp");
+      const data = JSON.parse(raw) as { id?: string; tint?: string; ts?: number; fadeMs?: number };
+      if (!data.ts || Date.now() - data.ts > 5000) return;
+
+      const b = BIOMES.find(bb => bb.id === data.id);
+      if (!b) return;
+
+      const dx = b.x - 50, dy = b.y - 50;
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+      setLanding({ x: b.x, y: b.y, tint: data.tint || b.tint, angle });
+      setEnterCurtain(true);
+      setTimeout(() => setEnterCurtain(false), data.fadeMs ?? RETURN_FADE_MS);
+      setTimeout(() => setLanding(null), 900);
+    } catch {}
+  }, []);
+
+  const biomeHref = (b: Biome) => (b.id === "cross" ? "/play/biome/cross" : `/play/biome/${b.id}`);
+
+  const onPinClick = (e: React.MouseEvent, b: Biome) => {
+    if (fly) return; // prevent double trigger
+    const r = frameRef.current?.getBoundingClientRect();
+    if (!r) return;
+
+    // Pose un flag pour l’anim d’arrivée côté donjon
+    try {
+      sessionStorage.setItem(
+        "warp",
+        JSON.stringify({ tint: b.tint, ts: Date.now(), fadeMs: 220 })
+      );
+    } catch {}
+
+    const relX = ((e.clientX - r.left) / r.width) * 100;
+    const relY = ((e.clientY - r.top) / r.height) * 100;
+    const dx = relX - 50, dy = relY - 50;
+    const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+
+    const href = biomeHref(b);
+    setFly({ ox: relX, oy: relY, px: e.clientX, py: e.clientY, angle, tint: b.tint, href });
+
+    // fondu noir juste à la fin
+    window.setTimeout(() => setCurtain(true), Math.max(0, FLY_MS - END_FADE_MS));
+    window.setTimeout(() => router.push(href), FLY_MS);
+  };
+
+  const traveling = !!fly;
+
+  return (
+    <>
+      <div className="gx-blurBG" />
+
+      <div className="gx-titlechip" style={{ top: `calc(${TOPBAR_H}px + 8px)` }}>
+        Arcane Overrealm — Main Map
       </div>
 
-      {/* WORLD MAP : régions (catégories principales) */}
-      {mode==="map" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {loadingCats && <div className="card p-6 animate-pulse-soft">Chargement de la carte…</div>}
-          {!loadingCats && regions.map(r=>{
-            const art = artFor(r.name);
-            const s = ensureSkill(r.id);
-            const pct = Math.round((s.xp/s.next)*100);
-            const subs = subcatsOf(r.id);
-            return (
-              <button
-                key={r.id}
-                onClick={()=>openRegionSelector(r)}
-                className="group relative card glass-border card--hover tilt scan cat-card p-6 text-left overflow-hidden"
-                style={{ background: art.bg }}
-              >
-                <div className="cat-halo" style={{ boxShadow:`inset 0 0 80px ${art.halo}40` }} />
-                <div className="flex items-center justify-between">
-                  <div className="text-xl font-bold flex items-center gap-2">
-                    <span className="text-2xl">{art.emoji}</span> {r.name}
-                  </div>
-                  <div className="badge">{subs.length ? `${subs.length} donjons` : `${r.question_count} Q`}</div>
-                </div>
+      <div
+        ref={frameRef}
+        className="fixed left-1/2"
+        style={{
+          top: TOPBAR_H,
+          transform: "translateX(-50%)",
+          width: w,
+          height: h,
+          zIndex: 10,
+          ...(fly
+            ? ({
+                ["--ox" as any]: `${fly.ox}%`,
+                ["--oy" as any]: `${fly.oy}%`,
+                ["--rx" as any]: `${((50 - fly.oy) / 50) * 6}deg`,
+                ["--ry" as any]: `${((fly.ox - 50) / 50) * 6}deg`,
+              } as React.CSSProperties)
+            : {}),
+          ...(landing
+            ? ({
+                ["--ox" as any]: `${landing.x}%`,
+                ["--oy" as any]: `${landing.y}%`,
+                ["--rx" as any]: `${((50 - landing.y) / 50) * 6}deg`,
+                ["--ry" as any]: `${((landing.x - 50) / 50) * 6}deg`,
+              } as React.CSSProperties)
+            : {}),
+        }}
+      >
+        {/* SCENE: on anime ce wrapper (pins ne glissent pas) */}
+        <div className={`gx-scene ${traveling ? "is-flying" : ""} ${landing ? "is-landing" : ""}`}>
+          <div className="gx-mapWrap">
+            <img
+              src="/images/map.png"
+              sizes={sizesAttr}
+              alt="Arcane Overrealm — Main Map"
+              width={w || 1920}
+              height={h || 1080}
+              className="gx-mapImg"
+              draggable={false}
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+            />
 
-                <div className="mt-1 text-xs text-[var(--gx-muted)]">
-                  Compétence: niveau <b>{s.level}</b> • {subs.length ? "sélection libre" : "entrainement direct"}
-                </div>
+            <div className="gx-mapGlow" />
+            <div ref={lightRef} className="gx-cursorLight" />
 
-                <div className="mt-4 flex items-center gap-3">
-                  <div className="relative w-12 h-12">
-                    <svg viewBox="0 0 36 36" className="absolute inset-0">
-                      <path d="M18 2 a 16 16 0 0 1 0 32 a 16 16 0 0 1 0 -32" fill="none" stroke="#262633" strokeWidth="3" />
-                      <path d="M18 2 a 16 16 0 0 1 0 32 a 16 16 0 0 1 0 -32" fill="none" stroke="url(#g2)" strokeWidth="3" strokeDasharray={`${pct}, 100`} strokeLinecap="round"/>
-                      <defs><linearGradient id="g2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="var(--gx-red)"/><stop offset="100%" stopColor="var(--gx-red-2)"/></linearGradient></defs>
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold">{pct}%</div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="progress h-2"><div className="progress-bar" style={{ width: `${pct}%` }} /></div>
-                    <div className="mt-1 text-xs text-[var(--gx-muted)]">XP {s.xp}/{s.next}</div>
-                  </div>
-                </div>
+            {/* idle ripple */}
+            <div className="gx-mapIdle">
+              <span className="r" /><span className="r d2" />
+            </div>
 
-                <div className="mt-3 text-sm">
-                  {pct===0 ? "✨ Nouveau territoire — prends ton épée en bois !" :
-                   pct<60 ? "🔥 Continue d’XP ici pour monter de niveau." :
-                   pct<100 ? "⚡ Presque le niveau suivant !" : "🏆 Upgrade assuré à la prochaine run."}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
+            {/* hover light */}
+            <div
+              className={`gx-biomeLight ${hovered ? "active" : ""}`}
+              style={
+                {
+                  ["--bx" as any]: hovered ? `${hovered.x}%` : "50%",
+                  ["--by" as any]: hovered ? `${hovered.y}%` : "50%",
+                  ["--tint" as any]: hovered?.tint || "var(--gx-red)",
+                } as React.CSSProperties
+              }
+            >
+              <span className="gx-blGlow" />
+              <span className="gx-blRipple" />
+              <span className="gx-blRipple delay2" />
+            </div>
 
-      {/* REGION SELECTOR — sous-catégories (donjons) */}
-      {openRegion && region && (
-        <div className="modal">
-          <div className="modal-backdrop" onClick={()=>setOpenRegion(false)} />
-          <div className="modal-panel modal-enter w-[min(960px,94vw)]">
-            <div className="card glass-border p-5 relative overflow-hidden" style={{background: artFor(region.name).bg}}>
-              <div className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(600px_200px_at_30%_0%,rgba(255,0,51,.5),transparent_60%)]" />
-              <div className="flex items-center justify-between">
-                <div className="text-lg font-bold flex items-center gap-2">
-                  <span className="text-2xl">{artFor(region.name).emoji}</span> {region.name} — Donjons
-                </div>
-                <button className="btn btn-ghost" onClick={()=>setOpenRegion(false)}>Fermer</button>
-              </div>
-
-              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {subcatsOf(region.id).map(sc=>{
-                  const picked = selectedSubs.includes(sc.id);
-                  return (
-                    <button key={sc.id}
-                      onClick={()=>toggleSub(sc.id)}
-                      className={`card p-3 text-left hover-ring ${picked?"card--active":""}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="font-semibold">{sc.name}</div>
-                        <div className="badge">{sc.question_count} Q</div>
-                      </div>
-                      <div className="mt-1 text-xs text-[var(--gx-muted)]">
-                        {picked ? "✅ Sélectionné" : "—"}
-                      </div>
-                    </button>
-                  );
-                })}
-                {subcatsOf(region.id).length===0 && (
-                  <div className="text-sm text-[var(--gx-muted)] col-span-full">
-                    Pas de sous-catégories pour cette région. L’entraînement utilisera tout le thème.
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <button className="btn" onClick={selectAllSubs}>Tout sélectionner</button>
-                <button className="btn" onClick={clearSubs}>Vider</button>
-                <div className="ml-auto row gap-2">
-                  <span className="text-sm text-[var(--gx-muted)]">Nombre de questions</span>
-                  <input type="range" min={5} max={40} value={questionCount}
-                      onChange={e=>setQuestionCount(parseInt(e.target.value))}
-                      className="w-40 accent-[var(--gx-red)]" />
-                  <span className="badge">{questionCount}</span>
-                  <button className="btn btn-primary" onClick={startRun}>Lancer la run</button>
-                </div>
-              </div>
+            {/* pins */}
+            <div className={`gx-pinLayer ${traveling ? "pointer-events-none" : ""}`}>
+              {BIOMES.map((b) => (
+                <ShieldPin key={b.id} b={b} onClick={onPinClick} onHover={setHovered} />
+              ))}
             </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* PLAY OVERLAY */}
-      {mode==="play" && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-          <div ref={arenaRef} className={`relative card glass-border w-[min(940px,92vw)] p-6 ${shake?"animate-shake":"animate-float"}`}>
-            {/* HUD */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span className="badge">{qs[i]?.category_name ?? "—"}</span>
-                <span className="badge">Q {i+1}/{qs.length}</span>
-                <span className="badge hud-chip--streak">Streak {streak}</span>
-                <span className="badge">Combo ×{combo}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="badge">lvl {profile.level}</span>
-                <button className="btn btn-ghost" onClick={()=>setMode("map")}>Quitter</button>
-              </div>
-            </div>
-
-            {/* Progress questions */}
-            <div className="progress mb-4">
-              <div className="progress-bar transition-all" style={{ width: `${Math.round(progressQ*100)}%` }} />
-            </div>
-
-            {/* Question */}
-            {qs[i] && (
-              <div key={transitionKey} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 relative">
-                {floatXP!==null && (
-                  <div className="float-xp">+{floatXP} XP</div>
-                )}
-                {floatGold!==null && (
-                  <div className="float-gold">+{floatGold} ⚱</div>
-                )}
-
-                <div className="text-xl font-semibold">{qs[i].prompt}</div>
-
-                {isMCQ(qs[i]) ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {(JSON.parse(qs[i].choices as string) as string[]).map((c, idx)=> {
-                      const correctIndex = JSON.parse(qs[i].answer as string) as number;
-                      const isCorrect = answered!==null && idx===correctIndex;
-                      const isWrong = answered===false && idx!==correctIndex;
-                      return (
-                        <button key={idx} onClick={()=>handleAnswer(idx===correctIndex)}
-                          className={`btn justify-start ${isCorrect?"btn-primary":""} ${answered!==null && isWrong ? "opacity-60" : ""}`}>
-                          <span className="text-[var(--gx-muted)] mr-2">{idx+1}.</span>{c}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <>
-                    <div className="text-sm text-[var(--gx-muted)]">Évalue-toi honnêtement puis valide.</div>
-                    <div className="flex flex-wrap gap-2">
-                      <button className="btn btn-primary" onClick={()=>handleAnswer(true)}>J’ai bon</button>
-                      <button className="btn" onClick={()=>handleAnswer(false)}>Faux / incomplet</button>
-                    </div>
-                  </>
-                )}
-
-                <div className="flex items-center justify-between pt-2">
-                  <button className="btn" onClick={()=>alert(`Réponse :\n\n${qs[i].answer}`)}>Voir la réponse</button>
-                  <button className="btn btn-primary" onClick={next} disabled={answered===null}>Suivant ↵</button>
-                </div>
-              </div>
-            )}
-          </div>
+      {/* Directional FX (départ) */}
+      {fly && (
+        <div
+          className="gx-flyFX"
+          style={
+            {
+              ["--cx" as any]: `${fly.px}px`,
+              ["--cy" as any]: `${fly.py}px`,
+              ["--angle" as any]: `${fly.angle}deg`,
+              ["--tint" as any]: fly.tint,
+            } as React.CSSProperties
+          }
+        >
+          <span className="beam" />
+          <span className="speed" />
+          <span className="gate" />
+          <span className="vignette" />
         </div>
       )}
 
-      {/* SUMMARY */}
-      {mode==="summary" && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-          <div className="card glass-border w-[min(760px,92vw)] p-6 animate-glow">
-            <h2 className="text-xl font-semibold mb-2">Bilan de la run</h2>
-            <p className="text-sm text-[var(--gx-muted)] mb-4">
-              Niveau global <b>{profile.level}</b> • Meilleur streak <b>{profile.bestStreak}</b>
-            </p>
-            <div className="progress mb-4"><div className="progress-bar" style={{ width: `${Math.round((profile.xp/profile.next)*100)}%` }} /></div>
-            <div className="flex gap-2">
-              <button className="btn" onClick={()=>setMode("map")}>Retour à la carte</button>
-              <button className="btn btn-primary" onClick={()=>{ setMode("play"); setI(0); setAnswered(null); setTransitionKey(k=>k+1); }}>Rejouer</button>
-            </div>
-          </div>
+      {/* Overlays de retour depuis donjon */}
+      {enterCurtain && <div className="gx-enterCurtain" aria-hidden />}
+      {landing && (
+        <div
+          className="gx-returnFX"
+          style={
+            {
+              ["--tint" as any]: landing.tint,
+              ["--angle" as any]: `${landing.angle}deg`,
+            } as React.CSSProperties
+          }
+        >
+          <span className="speed" />
         </div>
       )}
-    </div>
+
+      {/* Rideau de route (léger fondu noir) */}
+      {curtain && <div className="gx-routeCurtain" aria-hidden />}
+
+      <style jsx global>{`
+        .gx-blurBG {
+          position: fixed; inset: 0; z-index: 0; pointer-events: none;
+          background-image: url("/images/map.png");
+          background-size: cover; background-position: 50% 40%;
+          filter: blur(42px) saturate(1.15) brightness(0.82);
+          transform: scale(1.08); opacity: 0.55;
+        }
+        .gx-titlechip {
+          position: fixed; left: 50%; transform: translateX(-50%); z-index: 40;
+          display: inline-flex; align-items: center; padding: 6px 10px;
+          font-weight: 800; font-size: 13px; border-radius: 9999px;
+          background: color-mix(in srgb, var(--gx-panel) 78%, transparent);
+          border: 1px solid color-mix(in srgb, var(--gx-line) 86%, transparent);
+          box-shadow: 0 8px 30px rgba(0,0,0,.35), 0 0 12px rgba(255,0,51,.2);
+          backdrop-filter: blur(6px);
+        }
+
+        .gx-mapWrap { position: relative; width: 100%; height: 100%; }
+        .gx-mapImg {
+          width: 100%; height: 100%; display: block; image-rendering: auto;
+          border-radius: 18px;
+          box-shadow: 0 24px 60px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.03) inset;
+        }
+
+        /* ---------- Smooth fly: anime la SCENE ---------- */
+        .gx-scene { width: 100%; height: 100%; will-change: transform, filter; }
+        .gx-scene.is-flying {
+          transform-origin: var(--ox) var(--oy);
+          animation: flyZoom ${FLY_MS}ms cubic-bezier(.16,.84,.24,1) forwards;
+        }
+        @keyframes flyZoom {
+          0%   { transform: perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1) translateZ(0); filter: none; }
+          35%  { transform: perspective(1200px) rotateX(var(--rx)) rotateY(var(--ry)) scale(1.35); }
+          70%  { transform: perspective(1200px) rotateX(calc(var(--rx) * 1.02)) rotateY(calc(var(--ry) * 1.02)) scale(1.9);
+                 filter: saturate(1.06) brightness(1.02); }
+          100% { transform: perspective(1200px) rotateX(var(--rx)) rotateY(var(--ry)) scale(2.2);
+                 filter: saturate(1.1) brightness(1.04); }
+        }
+
+        /* Caméra qui “revient” du donjon vers la map */
+        .gx-scene.is-landing{
+          transform-origin: var(--ox) var(--oy);
+          animation: landFrom 900ms cubic-bezier(.18,.8,.24,1) both;
+        }
+        @keyframes landFrom{
+          0%{
+            transform: perspective(1200px) rotateX(var(--rx)) rotateY(var(--ry)) scale(2.2);
+            filter: saturate(1.06) brightness(1.02);
+            opacity: 0;
+          }
+          20%{ opacity: 1 }
+          100%{
+            transform: perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1);
+            filter: none; opacity: 1;
+          }
+        }
+
+        /* glow/cursor/idle */
+        .gx-mapGlow {
+          position: absolute; inset: 0; pointer-events: none; border-radius: 18px;
+          background:
+            radial-gradient(65% 55% at 50% 62%, rgba(255,0,51,.18), transparent 62%),
+            radial-gradient(60% 52% at 52% 60%, rgba(255,77,138,.12), transparent 60%),
+            radial-gradient(58% 48% at 50% 62%, rgba(255,255,255,.08), transparent 58%);
+          mix-blend-mode: screen; animation: glow 3.2s ease-in-out infinite;
+        }
+        @keyframes glow{0%,100%{opacity:.9}50%{opacity:1}}
+        .gx-cursorLight{
+          position:absolute; inset:0; pointer-events:none; border-radius:18px;
+          --x:50%; --y:50%;
+          background:
+            radial-gradient(260px 200px at var(--x) var(--y), rgba(255,0,51,.13), transparent 60%),
+            radial-gradient(180px 140px at var(--x) var(--y), rgba(90,124,255,.11), transparent 70%);
+          mix-blend-mode:screen; opacity:.45; transition:opacity .2s ease;
+        }
+        .gx-mapWrap:hover .gx-cursorLight{ opacity:.65; }
+        .gx-mapIdle{ position:absolute; inset:0; border-radius:18px; overflow:hidden; pointer-events:none; z-index:1; }
+        .gx-mapIdle .r{
+          position:absolute; left:50%; top:42%; transform:translate(-50%,-50%) scale(.6);
+          width:4vw; height:4vw; border-radius:9999px; border:1px solid rgba(255,255,255,.07);
+          box-shadow:0 0 6px rgba(255,255,255,.06); opacity:.30; animation: mapIdle 5.5s ease-out infinite;
+        }
+        .gx-mapIdle .r.d2{ animation-delay:1.8s; }
+        @keyframes mapIdle{ 0%{opacity:.30; transform:translate(-50%,-50%) scale(.6)} 100%{opacity:0; transform:translate(-50%,-50%) scale(2)} }
+
+        .gx-biomeLight{ position:absolute; inset:0; pointer-events:none; border-radius:18px; overflow:hidden; z-index:2; }
+        .gx-blGlow,.gx-blRipple{ position:absolute; left:var(--bx); top:var(--by); transform:translate(-50%,-50%); border-radius:9999px; will-change:transform,opacity; }
+        .gx-blGlow{ width:36vw; height:26vw; background:radial-gradient(closest-side, color-mix(in srgb, var(--tint) 18%, transparent) 0%, transparent 70%); filter:blur(18px); opacity:0; transition:opacity .18s ease; }
+        .gx-biomeLight.active .gx-blGlow{ opacity:.55; }
+        .gx-blRipple{ width:6vw; height:6vw; border:2px solid color-mix(in srgb, var(--tint) 55%, white 0%); box-shadow:0 0 16px color-mix(in srgb, var(--tint) 35%, transparent); opacity:0; }
+        .gx-biomeLight.active .gx-blRipple{ animation: drop 900ms ease-out forwards; }
+        .gx-biomeLight.active .gx-blRipple.delay2{ animation-delay:180ms; }
+        @keyframes drop{ 0%{transform:translate(-50%,-50%) scale(.35); opacity:.95} 75%{opacity:.35} 100%{transform:translate(-50%,-50%) scale(2.2); opacity:0} }
+
+        .gx-pinLayer{ position:absolute; inset:0; pointer-events:none; z-index:3; }
+        .gx-pin{ position:absolute; display:flex; flex-direction:column; align-items:center; gap:4px; pointer-events:auto; isolation:isolate; transition:transform .18s ease; transform-origin:center; z-index:4; }
+        .gx-pin:hover{ transform:translate(-50%,-58%) scale(1.16) rotateZ(-1deg); }
+
+        .gx-pin__halo{
+          position:absolute; left:50%; top:50%; width:170px; height:100px; transform:translate(-50%,-50%);
+          background: radial-gradient(110px 70px at 50% 40%, color-mix(in srgb, var(--tint) 48%, #000 0%), transparent 72%);
+          filter:blur(12px); opacity:.24; z-index:0; transition:opacity .2s ease, transform .2s ease;
+        }
+        .gx-pin:hover .gx-pin__halo{ opacity:.38; transform:translate(-50%,-52%) scale(1.18); }
+
+        .gx-pin__ring{
+          position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) scale(.7);
+          width:70px; height:70px; border-radius:9999px; pointer-events:none; z-index:0;
+          border:2.5px solid color-mix(in srgb, var(--tint) 55%, transparent);
+          box-shadow:0 0 14px color-mix(in srgb, var(--tint) 35%, transparent);
+          opacity:.55; animation: ringSoft 2.8s ease-out infinite;
+        }
+        .gx-pin .gx-pin__ring.r2{ animation-delay:.5s; }
+        .gx-pin .gx-pin__ring.r3{ animation-delay:1s; }
+        .gx-pin .gx-pin__ring.r4{ animation-delay:1.5s; }
+        @keyframes ringSoft{ 0%{ transform:translate(-50%,-50%) scale(.7); opacity:.55 } 70%{ opacity:.25 } 100%{ transform:translate(-50%,-50%) scale(1.7); opacity:0 } }
+
+        .gx-shieldWrap{ position:relative; width:56px; height:56px; }
+        .gx-pin__shield{
+          width:56px; height:56px; z-index:1; transition:transform .18s ease, filter .18s ease;
+          filter: drop-shadow(0 8px 22px rgba(0,0,0,.45)) drop-shadow(0 0 16px color-mix(in srgb, var(--tint) 35%, transparent));
+          animation: idle-float 5.5s ease-in-out infinite;
+        }
+        .gx-pin:hover .gx-pin__shield{
+          animation: idle-float 5.5s ease-in-out infinite, shieldPulse 1.6s ease-in-out infinite;
+          transform: translateY(-3px) scale(1.22) rotateZ(-2deg);
+          filter: drop-shadow(0 0 24px color-mix(in srgb, var(--tint) 50%, transparent)) brightness(1.07);
+        }
+        @keyframes idle-float{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+        @keyframes shieldPulse{ 0%{ transform: translateY(-3px) scale(1.18) rotateZ(-2deg) } 50%{ transform: translateY(-5px) scale(1.26) rotateZ(0deg) } 100%{ transform: translateY(-3px) scale(1.18) rotateZ(-2deg) } }
+        .gx-shieldShine{ position:absolute; inset:0; border-radius:12px; pointer-events:none; overflow:hidden; background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,.55) 45%, transparent 55%); filter: blur(1px); transform: translateX(-120%); opacity:0; }
+        .gx-pin:hover .gx-shieldShine{ animation: shine 900ms ease-out both; }
+        @keyframes shine{ from{ transform:translateX(-120%); opacity:.0 } to{ transform:translateX(120%); opacity:.9 } }
+
+        /* -------- Labels: lisibilité + couleur par biome + contour néon classe -------- */
+.gx-pin__label{
+  --t: var(--tint); /* couleur du biome */
+  position:relative; z-index:2;
+  font-size:12px; font-weight:700; letter-spacing:.2px;
+  line-height:1; padding:7px 11px; border-radius:10px;
+
+  /* texte coloré mais lisible */
+  color: color-mix(in srgb, var(--t) 88%, #ffffff 0%);
+  -webkit-text-stroke: .45px rgba(8,10,14,.55);
+  text-shadow:
+    0 0 1px rgba(0,0,0,.85),
+    0 0 8px color-mix(in srgb, var(--t) 42%, transparent);
+
+  /* puce “verre teinté” */
+  background:
+    radial-gradient(180% 160% at 50% -60%, color-mix(in srgb, var(--t) 18%, transparent) 0 38%, transparent 40%),
+    linear-gradient(180deg, rgba(10,12,18,.86), rgba(8,10,16,.72));
+  backdrop-filter: blur(8px) saturate(1.05);
+
+  /* double bord subtil + glow accordé */
+  border: 1px solid color-mix(in srgb, var(--t) 46%, rgba(255,255,255,.10));
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,.35) inset,           /* liseré interne sombre pour le contraste */
+    0 6px 20px rgba(0,0,0,.35),                 /* ombre portée */
+    0 0 18px color-mix(in srgb, var(--t) 26%, transparent); /* halo doux */
+  transform: translateY(-2px);
+  transition:
+    transform .18s ease,
+    box-shadow .22s ease,
+    background .22s ease,
+    border-color .22s ease;
+}
+.gx-pin__label::before{
+  /* léger liseré lumineux qui épouse la forme (très discret) */
+  content:""; position:absolute; inset:-1px; border-radius:inherit; pointer-events:none;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--t) 34%, rgba(255,255,255,.12)),
+    0 0 16px color-mix(in srgb, var(--t) 22%, transparent);
+  mix-blend-mode: screen; opacity:.85;
+}
+.gx-pin:hover .gx-pin__label{
+  transform: translateY(-6px) scale(1.06);
+  background:
+    radial-gradient(180% 160% at 50% -60%, color-mix(in srgb, var(--t) 22%, transparent) 0 38%, transparent 40%),
+    linear-gradient(180deg, rgba(12,14,22,.92), rgba(10,12,18,.80));
+  border-color: color-mix(in srgb, var(--t) 58%, rgba(255,255,255,.12));
+  box-shadow:
+    0 10px 30px rgba(0,0,0,.45),
+    0 0 0 1px rgba(0,0,0,.42) inset,
+    0 0 24px color-mix(in srgb, var(--t) 36%, transparent);
+}
+
+
+        /* -------- Directional FX (départ) -------- */
+        .gx-flyFX{ position: fixed; inset: 0; z-index: 80; pointer-events: none; --cx: 50%; --cy: 50%; --angle: 0deg; }
+        .gx-flyFX .beam{
+          position:absolute; left: var(--cx); top: var(--cy);
+          width: 140vmax; height: 14px; transform: translate(-50%,-50%) rotate(var(--angle));
+          background: linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--tint) 55%, white 0%) 45%, color-mix(in srgb, var(--tint) 55%, white 0%) 55%, transparent 100%);
+          filter: blur(2px) saturate(1.2); mix-blend-mode: screen; opacity:.85;
+          animation: beamPulse ${FLY_MS}ms ease forwards;
+        }
+        /* fin + douce => on tombe à 0 juste avant la route */
+        @keyframes beamPulse {
+          0%{opacity:.0; transform:translate(-50%,-50%) rotate(var(--angle)) scaleX(.4)}
+          40%{opacity:.9}
+          85%{opacity:.7}
+          100%{opacity:0; transform:translate(-50%,-50%) rotate(var(--angle)) scaleX(1)}
+        }
+        .gx-flyFX .speed{
+          position:absolute; inset:0;
+          background: repeating-linear-gradient(var(--angle), color-mix(in srgb, var(--tint) 40%, #fff 0%) 0 2px, transparent 2px 14px);
+          mask-image: radial-gradient(600px 420px at var(--cx) var(--cy), rgba(0,0,0,.95), transparent 60%);
+          mix-blend-mode: screen; opacity:.6; filter: blur(.4px);
+          animation: speedMove ${FLY_MS}ms cubic-bezier(.2,.75,.2,1) forwards;
+        }
+        @keyframes speedMove { 0%{background-position: 0 0; opacity:.0} 20%{opacity:.6} 100%{background-position: 0 -18vh; opacity:0} }
+        .gx-flyFX .gate{
+          position:absolute; left: var(--cx); top: var(--cy);
+          width: 14px; height: 14px; border-radius:9999px; transform: translate(-50%,-50%) scale(1);
+          box-shadow: 0 0 0 2px color-mix(in srgb, var(--tint) 80%, white 0%) inset, 0 0 24px color-mix(in srgb, var(--tint) 55%, transparent);
+          animation: gateOpen ${FLY_MS}ms cubic-bezier(.2,.75,.2,1) forwards;
+          mix-blend-mode: screen;
+        }
+        @keyframes gateOpen { 0%{transform:translate(-50%,-50%) scale(.8); opacity:.0} 35%{opacity:1} 100%{transform:translate(-50%,-50%) scale(18); opacity:0} }
+        .gx-flyFX .vignette{
+          position:absolute; inset:0;
+          background: radial-gradient(1200px 800px at var(--cx) var(--cy), rgba(0,0,0,0), rgba(0,0,0,.8));
+          animation: vg ${FLY_MS}ms ease forwards;
+        }
+        @keyframes vg { 0%{opacity:0} 70%{opacity:.85} 100%{opacity:.9} }
+
+        /* -------- Overlays retour -------- */
+        .gx-enterCurtain{
+          position: fixed; inset: 0; z-index: 80; pointer-events: none;
+          background: #000; animation: routeFadeOut ${RETURN_FADE_MS}ms ease forwards;
+        }
+        @keyframes routeFadeOut { from{opacity:.95} to{opacity:0} }
+
+        .gx-returnFX{ position:fixed; inset:0; z-index:70; pointer-events:none; animation: fxFadeOut 300ms ease 640ms forwards; }
+        .gx-returnFX .speed{
+          position:absolute; inset:0; opacity:.35; mix-blend-mode:screen; filter: blur(.4px);
+          background: repeating-linear-gradient(var(--angle), color-mix(in srgb, var(--tint) 40%, #fff 0%) 0 2px, transparent 2px 14px);
+          animation: speedBack 780ms cubic-bezier(.2,.75,.2,1) both;
+          mask-image: radial-gradient(620px 440px at 50% 58%, rgba(0,0,0,.95), transparent 65%);
+        }
+        @keyframes speedBack{ from{background-position:0 18vh; opacity:.35} to{background-position:0 0; opacity:.0} }
+        @keyframes fxFadeOut{ to{ opacity:0 } }
+
+        /* -------- Rideau de route (fondu noir) -------- */
+        .gx-routeCurtain{
+          position: fixed; inset: 0; z-index: 120; pointer-events: none;
+          background: #000;
+          animation: routeFade ${END_FADE_MS}ms ease forwards;
+        }
+        @keyframes routeFade { from { opacity: 0 } to { opacity: .95 } }
+      `}</style>
+    </>
   );
 }

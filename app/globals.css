@@ -50,6 +50,8 @@
   --z-modal:60;
   --z-max: 9999;
 }
+/* Garantit que la page peut réellement occuper tout le viewport */
+#root, #__next { height: 100%; }
 
 /* Reset léger + base */
 @layer base {

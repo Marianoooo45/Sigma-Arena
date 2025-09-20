@@ -3,13 +3,17 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "gen:map": "node scripts/make-map-variants.mjs public/images/map.png",
+    "gen:map:up": "node scripts/make-map-variants.mjs public/images/map.png --allowUpscale"
   },
   "devDependencies": {
     "@types/node": "24.5.2",
     "@types/react": "19.1.13",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
+    "sharp": "^0.34.4",
+    "sharp-cli": "^5.2.0",
     "tailwindcss": "^3.4.17",
     "typescript": "5.9.2"
   },
