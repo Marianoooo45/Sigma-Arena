@@ -23,6 +23,24 @@ Sigma-Arena/
 │  │  └─ stats/
 │  │     └─ route.ts
 │  ├─ play/
+│  │  ├─ biome/
+│  │  │  ├─ credit/
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ equity/
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ fx/
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ macro/
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ quant/
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ rates/
+│  │  │  │  ├─ level/
+│  │  │  │  │  └─ r1/
+│  │  │  │  │     └─ page.tsx
+│  │  │  │  └─ page.tsx
+│  │  │  └─ structured/
+│  │  │     └─ page.tsx
 │  │  └─ page.tsx
 │  ├─ settings/
 │  │  └─ page.tsx
@@ -30,24 +48,40 @@ Sigma-Arena/
 │  ├─ layout.tsx
 │  └─ page.tsx
 ├─ components/
-│  ├─ hud/
-│  │  └─ HUD.tsx
-│  └─ nav/
-│     └─ TopBar.tsx
+│  ├─ map/
+│  │  └─ MainBiomesMap.tsx
+│  ├─ nav/
+│  │  └─ TopBar.tsx
+│  ├─ BackToMapButton.tsx
+│  └─ RouteWarp.tsx
 ├─ lib/
 │  ├─ db.ts
 │  ├─ model.ts
+│  ├─ progress.ts
 │  └─ question_sync.ts
 ├─ public/
 │  ├─ images/
 │  │  ├─ Generated Image September 19, 2025 - 2_05AM.png
+│  │  ├─ bg_blanc.png
+│  │  ├─ bg_bleu.png
+│  │  ├─ bg_or.png
+│  │  ├─ bg_rose.png
+│  │  ├─ bg_rouge.png
+│  │  ├─ bg_vert.png
+│  │  ├─ bg_violet.png
+│  │  ├─ image de base-1920x1080.png
+│  │  ├─ image de base.png
 │  │  ├─ logo-dark.png
 │  │  ├─ logo-full.png
 │  │  ├─ logo-light.png
-│  │  └─ logo-mark.png
+│  │  ├─ logo-mark.png
+│  │  ├─ map.png
+│  │  ├─ underwater_dungeon_loop.mp4
+│  │  └─ underwater_dungeon_ultralight.mp4
 │  ├─ questions.json
 │  └─ seed-questions.json
 ├─ scripts/
+│  ├─ make-map-variants.mjs
 │  └─ seed.ts
 ├─ .gitignore
 ├─ architecture.txt
