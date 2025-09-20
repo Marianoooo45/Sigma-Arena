@@ -8,6 +8,7 @@
     "gen:map:up": "node scripts/make-map-variants.mjs public/images/map.png --allowUpscale"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "24.5.2",
     "@types/react": "19.1.13",
     "autoprefixer": "^10.4.21",
