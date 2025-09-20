@@ -3,6 +3,11 @@ import db, { ensureMasteryAndActivity } from "@/lib/db";
 import fs from "fs";
 import path from "path";
 
+// Helpers typés pour requêtes ponctuelles
+function sqlGet<T = any>(query: string, ...params: any[]): T | undefined {
+  return db.prepare(query).get(...params) as T | undefined;
+}
+
 function addCat(name: string, target: number, parent: number | null = null) {
   const res = db.prepare(`INSERT INTO categories(name, target_weight, parent_id) VALUES (?,?,?)`)
     .run(name, target, parent);
@@ -143,12 +148,10 @@ function addQuestion(
     const arr = JSON.parse(fs.readFileSync(qpath, "utf-8")) as SeedItem[];
 
     for (const it of arr) {
-      // Typage explicite du résultat de .get()
-      const row = db
-        .prepare<{ id: number }>(`SELECT id FROM categories WHERE name=?`)
-        .get(it.category) as { id: number } | undefined;
-
+      // Résultat typé de la requête (id de la catégorie)
+      const row = sqlGet<{ id: number }>(`SELECT id FROM categories WHERE name=?`, it.category);
       const catId = row?.id;
+
       if (catId) {
         addQuestion(
           catId,
