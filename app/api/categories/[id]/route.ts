@@ -2,13 +2,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 
-// Si tu utilises better-sqlite3, reste côté Node.js (pas Edge)
 export const runtime = "nodejs";
 
-type RouteContext = { params: Record<string, string | string[]> };
-
-export async function PATCH(req: NextRequest, { params }: RouteContext) {
-  const idParam = params.id;
+// ⚠️ pas d’alias, pas d’annotation stricte sur le 2e argument
+export async function PATCH(req: NextRequest, { params }: any) {
+  const idParam = params?.id;
   const idStr = Array.isArray(idParam) ? idParam[0] : idParam;
   const id = Number(idStr);
 
@@ -32,16 +30,14 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
   if (body.parent_id === null || typeof body.parent_id === "number") { fields.push("parent_id=?"); values.push(body.parent_id); }
 
   if (fields.length === 0) {
-    // Rien à mettre à jour
     return NextResponse.json({ ok: true, updated: 0 }, { status: 200 });
   }
 
   values.push(id);
 
   try {
-    const stmt = db.prepare(`UPDATE categories SET ${fields.join(", ")} WHERE id=?`);
-    const info = stmt.run(...values);
-    return NextResponse.json({ ok: true, updated: info.changes ?? 0 }, { status: 200 });
+    const info = db.prepare(`UPDATE categories SET ${fields.join(", ")} WHERE id=?`).run(...values);
+    return NextResponse.json({ ok: true, updated: info?.changes ?? 0 }, { status: 200 });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e?.message ?? "DB error" }, { status: 500 });
   }
