@@ -7,21 +7,28 @@ const EMA_ALPHA = 0.2;
 
 type Row = { [k: string]: any };
 
+// --- Helpers typés pour contrer unknown[] / unknown des drivers SQL ---
+function sqlAll<T = Row>(query: string, ...params: any[]): T[] {
+  // Certaines versions de @types/better-sqlite3 ne propagent pas le générique -> cast explicite ici
+  return db.prepare(query).all(...params) as unknown as T[];
+}
+function sqlGet<T = Row>(query: string, ...params: any[]): T {
+  return db.prepare(query).get(...params) as unknown as T;
+}
+
 function sigmoid(x: number) { return 1 / (1 + Math.exp(-x)); }
 
 export function getAllCategories(): Row[] {
-  return db
-    .prepare<Row>(`
-      SELECT c.*, 
-        COALESCE(m.rating, 50.0) AS rating, 
-        COALESCE(a.ema_activity, 0.0) AS ema_activity
-      FROM categories c
-      LEFT JOIN mastery m ON m.category_id=c.id
-      LEFT JOIN activity_rollup a ON a.category_id=c.id
-      WHERE c.active=1
-      ORDER BY (CASE WHEN parent_id IS NULL THEN 0 ELSE 1 END), name
-    `)
-    .all();
+  return sqlAll<Row>(`
+    SELECT c.*, 
+      COALESCE(m.rating, 50.0) AS rating, 
+      COALESCE(a.ema_activity, 0.0) AS ema_activity
+    FROM categories c
+    LEFT JOIN mastery m ON m.category_id=c.id
+    LEFT JOIN activity_rollup a ON a.category_id=c.id
+    WHERE c.active=1
+    ORDER BY (CASE WHEN parent_id IS NULL THEN 0 ELSE 1 END), name
+  `);
 }
 
 export function currentWeights(): Row[] {
@@ -35,14 +42,12 @@ export function currentWeights(): Row[] {
 }
 
 export function nav(): number {
-  const rows = db
-    .prepare<Row>(`
-      SELECT target_weight, COALESCE(m.rating,50.0) AS rating
-      FROM categories c
-      LEFT JOIN mastery m ON m.category_id=c.id
-      WHERE c.active=1
-    `)
-    .all();
+  const rows = sqlAll<Row>(`
+    SELECT target_weight, COALESCE(m.rating,50.0) AS rating
+    FROM categories c
+    LEFT JOIN mastery m ON m.category_id=c.id
+    WHERE c.active=1
+  `);
   return rows.reduce((s: number, r: Row) => s + r.target_weight * (r.rating), 0);
 }
 
@@ -63,9 +68,7 @@ function expectedP(rating: number, difficulty: number) {
 export function selectBatch(N = 15): Row[] {
   const rows = currentWeights();
   const themeScores = rows.map((r: Row) => {
-    const mastery = db
-      .prepare<Row>(`SELECT rating_var FROM mastery WHERE category_id=?`)
-      .get(r.id) as Row | undefined;
+    const mastery = sqlGet<Row | undefined>(`SELECT rating_var FROM mastery WHERE category_id=?`, r.id);
     const rv = mastery?.rating_var ?? 50.0;
     const gap = (r.target_weight || 0) - (r.current_weight || 0);
     const priority = 0.6 * Math.abs(gap) + 0.3 * (rv / 100) + 0.1 * (1 - (r.ema_activity || 0));
@@ -75,22 +78,18 @@ export function selectBatch(N = 15): Row[] {
   const pool: Row[] = [];
   // top-3 catégories prioritaires : plus de questions
   for (const t of themeScores.slice(0, 3)) {
-    const qs = db
-      .prepare<Row>(`
-        SELECT id, category_id, difficulty FROM questions 
-        WHERE category_id=? ORDER BY RANDOM() LIMIT 50
-      `)
-      .all(t.id);
+    const qs = sqlAll<Row>(`
+      SELECT id, category_id, difficulty FROM questions 
+      WHERE category_id=? ORDER BY RANDOM() LIMIT 50
+    `, t.id);
     pool.push(...qs);
   }
   // long tail
   for (const t of themeScores.slice(3)) {
-    const qs = db
-      .prepare<Row>(`
-        SELECT id, category_id, difficulty FROM questions 
-        WHERE category_id=? ORDER BY RANDOM() LIMIT 10
-      `)
-      .all(t.id);
+    const qs = sqlAll<Row>(`
+      SELECT id, category_id, difficulty FROM questions 
+      WHERE category_id=? ORDER BY RANDOM() LIMIT 10
+    `, t.id);
     pool.push(...qs);
   }
   // shuffle simple
@@ -112,29 +111,22 @@ export function openSession(): number {
 }
 
 export function loadQuestion(qid: number): Row {
-  const row = db
-    .prepare<Row>(`
-      SELECT q.*, c.name AS category_name,
-        COALESCE(m.rating,50.0) as rating
-      FROM questions q
-      JOIN categories c ON c.id=q.category_id
-      LEFT JOIN mastery m ON m.category_id=c.id
-      WHERE q.id=?
-    `)
-    .get(qid) as Row;
+  const row = sqlGet<Row>(`
+    SELECT q.*, c.name AS category_name,
+      COALESCE(m.rating,50.0) as rating
+    FROM questions q
+    JOIN categories c ON c.id=q.category_id
+    LEFT JOIN mastery m ON m.category_id=c.id
+    WHERE q.id=?
+  `, qid);
   return row;
 }
 
 export function answerQuestion(sessionId: number, questionId: number, userCorrect: boolean, timeSec: number): Row {
-  const q = db
-    .prepare<Row>(`SELECT category_id, difficulty FROM questions WHERE id=?`)
-    .get(questionId) as Row;
+  const q = sqlGet<Row>(`SELECT category_id, difficulty FROM questions WHERE id=?`, questionId);
   ensureMasteryAndActivity(q.category_id);
 
-  const m = db
-    .prepare<Row>(`SELECT rating, rating_var FROM mastery WHERE category_id=?`)
-    .get(q.category_id) as Row;
-
+  const m = sqlGet<Row>(`SELECT rating, rating_var FROM mastery WHERE category_id=?`, q.category_id);
   const rating = m.rating as number;
   const rating_var = m.rating_var as number;
 
@@ -157,9 +149,7 @@ export function answerQuestion(sessionId: number, questionId: number, userCorrec
       q.category_id
     );
 
-    const actRow = db
-      .prepare<Row>(`SELECT ema_activity, ema_perf FROM activity_rollup WHERE category_id=?`)
-      .get(q.category_id) as Row | undefined;
+    const actRow = sqlGet<Row | undefined>(`SELECT ema_activity, ema_perf FROM activity_rollup WHERE category_id=?`, q.category_id);
     const act = actRow?.ema_activity ?? 0;
     const perf = actRow?.ema_perf ?? 0.5;
     const actNew = (1 - EMA_ALPHA) * act + EMA_ALPHA * 1.0;
@@ -180,9 +170,7 @@ export function answerQuestion(sessionId: number, questionId: number, userCorrec
 export function closeSession(sessionId: number) {
   const nav1 = nav();
   const te1 = trackingError();
-  const row = db
-    .prepare<Row>(`SELECT nav_before, te_before FROM sessions WHERE id=?`)
-    .get(sessionId) as Row;
+  const row = sqlGet<Row>(`SELECT nav_before, te_before FROM sessions WHERE id=?`, sessionId);
   const pnl = nav1 - (row?.nav_before ?? 0);
   db.prepare(`
     UPDATE sessions SET ended_at=?, te_after=?, nav_after=?, pnl=? WHERE id=?
