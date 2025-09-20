@@ -12,13 +12,13 @@ const RETURN_FADE_MS = 260; // fondu d'entrée depuis un donjon
 type Biome = { id: string; name: string; x: number; y: number; tint: string };
 
 const BIOMES: Biome[] = [
-  { id: "equity",     name: "Equity Derivatives",              x: 51, y: 24, tint: "var(--gx-red)" },
-  { id: "macro",      name: "Macro & Economics",               x: 39, y: 37, tint: "#e5e7eb" },
-  { id: "credit",     name: "Credit Derivatives",              x: 65, y: 32, tint: "var(--gx-purple)" },
-  { id: "structured", name: "Structured Products", x: 68, y: 50, tint: "var(--gx-magenta)" },
-  { id: "fx",    name: "FX & Commodities",             x: 51, y: 52, tint: "var(--gx-cyan)" },
-  { id: "rates",      name: "Rates & Fixed Income",               x: 38, y: 71, tint: "#ffd166" },
-  { id: "quant",      name: "Quant & Risk Management",         x: 60, y: 78, tint: "#27e28a" },
+  { id: "equity",     name: "Equity Derivatives",      x: 51, y: 24, tint: "var(--gx-red)" },
+  { id: "macro",      name: "Macro & Economics",       x: 39, y: 37, tint: "#e5e7eb" },
+  { id: "credit",     name: "Credit Derivatives",      x: 65, y: 32, tint: "var(--gx-purple)" },
+  { id: "structured", name: "Structured Products",     x: 68, y: 50, tint: "var(--gx-magenta)" },
+  { id: "fx",         name: "FX & Commodities",        x: 51, y: 52, tint: "var(--gx-cyan)" },
+  { id: "rates",      name: "Rates & Fixed Income",    x: 38, y: 71, tint: "#ffd166" },
+  { id: "quant",      name: "Quant & Risk Management", x: 60, y: 78, tint: "#27e28a" },
 ];
 
 function useContainSize(aspect: number) {
@@ -37,6 +37,120 @@ function useContainSize(aspect: number) {
     return () => window.removeEventListener("resize", calc);
   }, [aspect]);
   return size;
+}
+
+/* ---------- BIOME-SPECIFIC GLYPHS (inside shield) ---------- */
+function BiomeGlyph({ id }: { id: string }) {
+  // High-contrast glyphs: white stroke with subtle shadow for legibility
+  const stroke = "#ffffff";
+  const sw = 2.4;
+  const common = {
+    stroke,
+    strokeWidth: sw,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    fill: "none",
+    filter: "url(#glyphShadow)", // defined per-shield in <defs>
+  };
+
+  switch (id) {
+    case "equity": {
+      // Small sword at ~45° (rotate -45° around center)
+      return (
+        <g transform="rotate(-45 32 28)" {...common}>
+          {/* blade */}
+          <path d="M32 16 L32 34" />
+          {/* tip */}
+          <path d="M30 14 L32 12 L34 14" />
+          {/* cross-guard */}
+          <path d="M27 31 L37 31" />
+          {/* grip + pommel */}
+          <path d="M32 34 L32 38" />
+          <circle cx="32" cy="39.5" r="1.6" fill={stroke} stroke="none" filter="url(#glyphShadow)" />
+        </g>
+      );
+    }
+
+    case "macro": {
+      // Compass rose
+      return (
+        <g {...common}>
+          <circle cx="32" cy="28" r="9" />
+          <path d="M32 18 L32 12" />
+          <path d="M32 44 L32 38" />
+          <path d="M22 28 L18 28" />
+          <path d="M46 28 L42 28" />
+          <path d="M32 28 L37 23" />
+        </g>
+      );
+    }
+
+    case "credit": {
+      // Scales of credit justice
+      return (
+        <g {...common}>
+          <path d="M22 18 H42" />
+          <path d="M32 18 V40" />
+          <path d="M24 20 L20 28 L28 28 Z" />
+          <path d="M40 20 L36 28 L44 28 Z" />
+        </g>
+      );
+    }
+
+    case "structured": {
+      // EXACTLY your previous triangle/chevron (unchanged)
+      return (
+        <path
+          d="M24 24 L32 36 L40 24"
+          stroke="#0b0b12"
+          strokeWidth="3.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
+        />
+      );
+    }
+
+    case "fx": {
+      // Two circular arrows (swap-like)
+      return (
+        <g {...common}>
+          <path d="M27 20 A12 12 0 0 1 44 28" />
+          <path d="M43 22 L44 28 L38 27" />
+          <path d="M37 36 A12 12 0 0 1 20 28" />
+          <path d="M21 34 L20 28 L26 29" />
+        </g>
+      );
+    }
+
+    case "rates": {
+      // Yield curve with nodes
+      return (
+        <g {...common}>
+          <path d="M22 36 H42" />
+          <path d="M22 36 C26 30, 30 24, 42 20" />
+          <circle cx="22" cy="36" r="1.8" fill={stroke} stroke="none" filter="url(#glyphShadow)" />
+          <circle cx="32" cy="28" r="1.8" fill={stroke} stroke="none" filter="url(#glyphShadow)" />
+          <circle cx="42" cy="20" r="1.8" fill={stroke} stroke="none" filter="url(#glyphShadow)" />
+        </g>
+      );
+    }
+
+    case "quant": {
+      // Atom / orbital
+      return (
+        <g {...common}>
+          <ellipse cx="32" cy="28" rx="12" ry="6" />
+          <ellipse cx="32" cy="28" rx="6" ry="12" transform="rotate(30 32 28)" />
+          <ellipse cx="32" cy="28" rx="6" ry="12" transform="rotate(-30 32 28)" />
+          <circle cx="32" cy="28" r="2.6" fill={stroke} stroke="none" filter="url(#glyphShadow)" />
+        </g>
+      );
+    }
+
+    default:
+      return null;
+  }
 }
 
 /* ---------- PIN ---------- */
@@ -88,7 +202,14 @@ function ShieldPin({
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
+
+            {/* crisp shadow for white glyphs */}
+            <filter id="glyphShadow" x="-40%" y="-40%" width="180%" height="180%">
+              <feDropShadow dx="0" dy="1" stdDeviation="0.6" floodColor="#000000" floodOpacity="0.65" />
+            </filter>
           </defs>
+
+          {/* shield */}
           <path
             d="M32 4 L54 12 V28 C54 46 43 56 32 60 C21 56 10 46 10 28 V12 Z"
             fill="rgba(8,8,14,.72)"
@@ -96,14 +217,18 @@ function ShieldPin({
             strokeWidth="2.5"
             filter={`url(#glow-${b.id})`}
           />
-          <circle cx="32" cy="28" r="10" fill={`url(#g-${b.id})`} />
-          <path
-            d="M24 24 L32 36 L40 24"
-            stroke="#0b0b12"
-            strokeWidth="3.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+
+          {/* tinted puck: keep EXACT original for 'structured' */}
+          <circle
+            cx="32"
+            cy="28"
+            r={b.id === "structured" ? 10 : 11.5}
+            fill={`url(#g-${b.id})`}
+            opacity="0.95"
           />
+
+          {/* biome glyph (triangle unchanged for 'structured') */}
+          <BiomeGlyph id={b.id} />
         </svg>
         <span className="gx-shieldShine" />
       </span>
@@ -349,7 +474,7 @@ export default function PlayPage() {
           font-weight: 800; font-size: 13px; border-radius: 9999px;
           background: color-mix(in srgb, var(--gx-panel) 78%, transparent);
           border: 1px solid color-mix(in srgb, var(--gx-line) 86%, transparent);
-          box-shadow: 0 8px 30px rgba(0,0,0,.35), 0 0 12px rgba(255,0,51,.2);
+          box-shadow: 0 8px 30px rgba(0,0,0,.35), 0 0 12px rgba(255,255,51,.2);
           backdrop-filter: blur(6px);
         }
 
@@ -470,59 +595,37 @@ export default function PlayPage() {
         .gx-pin:hover .gx-shieldShine{ animation: shine 900ms ease-out both; }
         @keyframes shine{ from{ transform:translateX(-120%); opacity:.0 } to{ transform:translateX(120%); opacity:.9 } }
 
-        /* -------- Labels: lisibilité + couleur par biome + contour néon classe -------- */
-.gx-pin__label{
-  --t: var(--tint); /* couleur du biome */
-  position:relative; z-index:2;
-  font-size:12px; font-weight:700; letter-spacing:.2px;
-  line-height:1; padding:7px 11px; border-radius:10px;
-
-  /* texte coloré mais lisible */
-  color: color-mix(in srgb, var(--t) 88%, #ffffff 0%);
-  -webkit-text-stroke: .45px rgba(8,10,14,.55);
-  text-shadow:
-    0 0 1px rgba(0,0,0,.85),
-    0 0 8px color-mix(in srgb, var(--t) 42%, transparent);
-
-  /* puce “verre teinté” */
-  background:
-    radial-gradient(180% 160% at 50% -60%, color-mix(in srgb, var(--t) 18%, transparent) 0 38%, transparent 40%),
-    linear-gradient(180deg, rgba(10,12,18,.86), rgba(8,10,16,.72));
-  backdrop-filter: blur(8px) saturate(1.05);
-
-  /* double bord subtil + glow accordé */
-  border: 1px solid color-mix(in srgb, var(--t) 46%, rgba(255,255,255,.10));
-  box-shadow:
-    0 0 0 1px rgba(0,0,0,.35) inset,           /* liseré interne sombre pour le contraste */
-    0 6px 20px rgba(0,0,0,.35),                 /* ombre portée */
-    0 0 18px color-mix(in srgb, var(--t) 26%, transparent); /* halo doux */
-  transform: translateY(-2px);
-  transition:
-    transform .18s ease,
-    box-shadow .22s ease,
-    background .22s ease,
-    border-color .22s ease;
-}
-.gx-pin__label::before{
-  /* léger liseré lumineux qui épouse la forme (très discret) */
-  content:""; position:absolute; inset:-1px; border-radius:inherit; pointer-events:none;
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--t) 34%, rgba(255,255,255,.12)),
-    0 0 16px color-mix(in srgb, var(--t) 22%, transparent);
-  mix-blend-mode: screen; opacity:.85;
-}
-.gx-pin:hover .gx-pin__label{
-  transform: translateY(-6px) scale(1.06);
-  background:
-    radial-gradient(180% 160% at 50% -60%, color-mix(in srgb, var(--t) 22%, transparent) 0 38%, transparent 40%),
-    linear-gradient(180deg, rgba(12,14,22,.92), rgba(10,12,18,.80));
-  border-color: color-mix(in srgb, var(--t) 58%, rgba(255,255,255,.12));
-  box-shadow:
-    0 10px 30px rgba(0,0,0,.45),
-    0 0 0 1px rgba(0,0,0,.42) inset,
-    0 0 24px color-mix(in srgb, var(--t) 36%, transparent);
-}
-
+        /* -------- Labels -------- */
+        .gx-pin__label{
+          --t: var(--tint);
+          position:relative; z-index:2;
+          font-size:12px; font-weight:700; letter-spacing:.2px;
+          line-height:1; padding:7px 11px; border-radius:10px;
+          color: color-mix(in srgb, var(--t) 88%, #ffffff 0%);
+          -webkit-text-stroke: .45px rgba(8,10,14,.55);
+          text-shadow: 0 0 1px rgba(0,0,0,.85), 0 0 8px color-mix(in srgb, var(--t) 42%, transparent);
+          background:
+            radial-gradient(180% 160% at 50% -60%, color-mix(in srgb, var(--t) 18%, transparent) 0 38%, transparent 40%),
+            linear-gradient(180deg, rgba(10,12,18,.86), rgba(8,10,16,.72));
+          backdrop-filter: blur(8px) saturate(1.05);
+          border: 1px solid color-mix(in srgb, var(--t) 46%, rgba(255,255,255,.10));
+          box-shadow: 0 0 0 1px rgba(0,0,0,.35) inset, 0 6px 20px rgba(0,0,0,.35), 0 0 18px color-mix(in srgb, var(--t) 26%, transparent);
+          transform: translateY(-2px);
+          transition: transform .18s ease, box-shadow .22s ease, background .22s ease, border-color .22s ease;
+        }
+        .gx-pin__label::before{
+          content:""; position:absolute; inset:-1px; border-radius:inherit; pointer-events:none;
+          box-shadow: 0 0 0 1px color-mix(in srgb, var(--t) 34%, rgba(255,255,255,.12)), 0 0 16px color-mix(in srgb, var(--t) 22%, transparent);
+          mix-blend-mode: screen; opacity:.85;
+        }
+        .gx-pin:hover .gx-pin__label{
+          transform: translateY(-6px) scale(1.06);
+          background:
+            radial-gradient(180% 160% at 50% -60%, color-mix(in srgb, var(--t) 22%, transparent) 0 38%, transparent 40%),
+            linear-gradient(180deg, rgba(12,14,22,.92), rgba(10,12,18,.80));
+          border-color: color-mix(in srgb, var(--t) 58%, rgba(255,255,255,.12));
+          box-shadow: 0 10px 30px rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.42) inset, 0 0 24px color-mix(in srgb, var(--t) 36%, transparent);
+        }
 
         /* -------- Directional FX (départ) -------- */
         .gx-flyFX{ position: fixed; inset: 0; z-index: 80; pointer-events: none; --cx: 50%; --cy: 50%; --angle: 0deg; }
@@ -533,7 +636,6 @@ export default function PlayPage() {
           filter: blur(2px) saturate(1.2); mix-blend-mode: screen; opacity:.85;
           animation: beamPulse ${FLY_MS}ms ease forwards;
         }
-        /* fin + douce => on tombe à 0 juste avant la route */
         @keyframes beamPulse {
           0%{opacity:.0; transform:translate(-50%,-50%) rotate(var(--angle)) scaleX(.4)}
           40%{opacity:.9}

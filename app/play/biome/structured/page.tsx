@@ -15,7 +15,7 @@ const THEME = {
 type Level = { id: string; title: string; subtitle: string; diff: number; locked?: boolean };
 
 const LEVELS: Level[] = [
-  { id: "s1", title: "LEVEL 1: TRANCHE BASICS",   subtitle: "Waterfall • attachment/detachment", diff: 15, locked: true },
+  { id: "s1", title: "LEVEL 1: TRANCHE BASICS",   subtitle: "Waterfall • attachment/detachment", diff: 15 },
   { id: "s2", title: "LEVEL 2: CORRELATION LAB",           subtitle: "Base/compound corr • mapping",      diff: 25, locked: true },
   { id: "s3", title: "LEVEL 3: CDO ENGINE",                subtitle: "Loss dist • large pool approx",     diff: 35, locked: true },
   { id: "s4", title: "LEVEL 4: PATH-DEPENDENT SANCTUM",    subtitle: "Auto-call • barriers • memory",      diff: 45, locked: true },
