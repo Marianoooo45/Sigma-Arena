@@ -15,11 +15,11 @@ const THEME = {
 type Level = { id: string; title: string; subtitle: string; diff: number; locked?: boolean };
 
 const LEVELS: Level[] = [
-  { id: "e1", title: "LEVEL 1: PRICE ACTION FORGE",    subtitle: "Momentum vs mean-reversion",   diff: 15 },
-  { id: "e2", title: "FACTOR ARENA",                   subtitle: "Value • Quality • Size mix",    diff: 25 },
-  { id: "e3", title: "MICROSTRUCTURE DEPTHS",          subtitle: "Spread • slippage • impact",    diff: 35 },
-  { id: "e4", title: "EARNINGS GAUNTLET",              subtitle: "Gaps • post-earnings drift",    diff: 45 },
-  { id: "e5", title: "ELDER ALPHA SHRINE",             subtitle: "Perfect run required",           diff: 55, locked: true },
+  { id: "e1", title: "LEVEL 1: PRICE ACTION FORGE",    subtitle: "Momentum vs mean-reversion",   diff: 15, locked: true },
+  { id: "e2", title: "LEVEL 2: FACTOR ARENA",                   subtitle: "Value • Quality • Size mix",    diff: 25, locked: true },
+  { id: "e3", title: "LEVEL 3: MICROSTRUCTURE DEPTHS",          subtitle: "Spread • slippage • impact",    diff: 35, locked: true },
+  { id: "e4", title: "LEVEL 4: EARNINGS GAUNTLET",              subtitle: "Gaps • post-earnings drift",    diff: 45, locked: true },
+  { id: "e5", title: "LEVEL 5: ELDER ALPHA SHRINE",             subtitle: "Perfect run required",           diff: 55, locked: true },
 ];
 
 export default function EquityDungeon() {

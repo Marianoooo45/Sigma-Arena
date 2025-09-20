@@ -15,10 +15,10 @@ type Level = { id: string; title: string; subtitle: string; diff: number; locked
 
 const LEVELS: Level[] = [
   { id: "r1", title: "LEVEL 1: BOND FOUNDATIONS", subtitle: "Warm-up • par yield basics", diff: 15 },
-  { id: "r2", title: "LEVEL 2: YIELD RAMP",        subtitle: "Carry & roll • convexity",   diff: 25 },
-  { id: "r3", title: "DURATION SANDS",             subtitle: "DV01 storms & hedges",       diff: 35 },
-  { id: "r4", title: "CURVE TEMPLE",               subtitle: "2s10s rites & butterflies",  diff: 45 },
-  { id: "r5", title: "ELDER YIELD SHRINE",         subtitle: "Perfect run required",       diff: 55, locked: true },
+  { id: "r2", title: "LEVEL 2: YIELD RAMP",        subtitle: "Carry & roll • convexity",   diff: 25, locked: true },
+  { id: "r3", title: "LEVEL 3: DURATION SANDS",             subtitle: "DV01 storms & hedges",       diff: 35, locked: true },
+  { id: "r4", title: "LEVEL 4: CURVE TEMPLE",               subtitle: "2s10s rites & butterflies",  diff: 45, locked: true },
+  { id: "r5", title: "LEVEL 5: ELDER YIELD SHRINE",         subtitle: "Perfect run required",       diff: 55, locked: true },
 ];
 
 export default function RatesDungeon() {

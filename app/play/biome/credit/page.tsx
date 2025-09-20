@@ -15,12 +15,13 @@ const THEME = {
 type Level = { id: string; title: string; subtitle: string; diff: number; locked?: boolean };
 
 const LEVELS: Level[] = [
-  { id: "c1", title: "LEVEL 1: SPREAD FOUNDATIONS",  subtitle: "IG vs HY • OAS • beta",     diff: 15 },
-  { id: "c2", title: "CURVE LABYRINTH",              subtitle: "Term, slope & butterfly",  diff: 25 },
-  { id: "c3", title: "EVENT RISK VAULT",             subtitle: "Downgrades • distress",    diff: 35 },
-  { id: "c4", title: "CROSS-CAP STRUCTURES",         subtitle: "CDX • tranches • basis",   diff: 45 },
-  { id: "c5", title: "ELDER CREDIT SHRINE",          subtitle: "Perfect run required",     diff: 55, locked: true },
+  { id: "c1", title: "LEVEL 1: SPREAD FOUNDATIONS",  subtitle: "IG vs HY • OAS • beta",        diff: 15 },
+  { id: "c2", title: "LEVEL 2: DEFAULT DUNGEON",              subtitle: "Ratings • fallen angels",      diff: 25, locked: true },
+  { id: "c3", title: "LEVEL 3: RECOVERY CATACOMBS",           subtitle: "Event risk • distressed debt", diff: 35, locked: true },
+  { id: "c4", title: "LEVEL 4: TRANCHE TOWER",                subtitle: "CDOs • mezz vs equity slice",  diff: 45, locked: true },
+  { id: "c5", title: "LEVEL 5: ELDER CREDIT SHRINE",          subtitle: "Correlation collapse boss",    diff: 55, locked: true },
 ];
+
 
 export default function CreditDungeon() {
   const [selected, setSelected] = useState<string | null>(null);

@@ -16,11 +16,11 @@ const THEME = {
 type Level = { id: string; title: string; subtitle: string; diff: number; locked?: boolean };
 
 const LEVELS: Level[] = [
-  { id: "m1", title: "LEVEL 1: BUSINESS CYCLE", subtitle: "Output gap • leading data", diff: 15 },
-  { id: "m2", title: "INFLATION FORGE",         subtitle: "Drivers • sticky vs flex",  diff: 25 },
-  { id: "m3", title: "LIQUIDITY CHAMBER",       subtitle: "CB balance sheets • QT",    diff: 35 },
-  { id: "m4", title: "GLOBAL MACRO CORE",       subtitle: "FX • commodities • spillover", diff: 45 },
-  { id: "m5", title: "ELDER MACRO SHRINE",      subtitle: "Perfect run required",      diff: 55, locked: true },
+  { id: "m1", title: "LEVEL 1: BUSINESS CYCLE", subtitle: "Output gap • leading data", diff: 15, locked: true },
+  { id: "m2", title: "LEVEL 2: INFLATION FORGE",         subtitle: "Drivers • sticky vs flex",  diff: 25, locked: true },
+  { id: "m3", title: "LEVEL 3: LIQUIDITY CHAMBER",       subtitle: "CB balance sheets • QT",    diff: 35, locked: true },
+  { id: "m4", title: "LEVEL 4: GLOBAL MACRO CORE",       subtitle: "FX • commodities • spillover", diff: 45, locked: true },
+  { id: "m5", title: "LEVEL 5: ELDER MACRO SHRINE",      subtitle: "Perfect run required",      diff: 55, locked: true },
 ];
 
 export default function MacroDungeon() {

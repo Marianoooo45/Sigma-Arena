@@ -14,11 +14,11 @@ const THEME = {
 type Level = { id: string; title: string; subtitle: string; diff: number; locked?: boolean };
 
 const LEVELS: Level[] = [
-  { id: "n1", title: "LEVEL 1: NEON ROOTS", subtitle: "Warm-up • learn the path", diff: 15 },
-  { id: "n2", title: "LEVEL 2: NEON ROOTS", subtitle: "Harder • variance traps",  diff: 25 },
-  { id: "n3", title: "GLITCHWATER RIVER",   subtitle: "Cross-flows & hedges",     diff: 35 },
-  { id: "n4", title: "DATACORE GROVE",      subtitle: "Regime shift bossfight",   diff: 45 },
-  { id: "n5", title: "ELDER QUANT SHRINE",  subtitle: "Perfect run required",     diff: 55, locked: true },
+  { id: "q1", title: "LEVEL 1: VAR CAVERNS",      subtitle: "Shadows of Value-at-Risk",    diff: 15 },
+  { id: "q2", title: "LEVEL 2: GREEK LABYRINTH",  subtitle: "Delta, Gamma, Vega traps",    diff: 25, locked: true },
+  { id: "q3", title: "LEVEL 3: MONTE CARLO CATACOMBS",     subtitle: "Stochastic beasts ahead",     diff: 35, locked: true },
+  { id: "q4", title: "LEVEL 4: BLACK-SCHOLES ABYSS",       subtitle: "Volatility storm bossfight",  diff: 45, locked: true },
+  { id: "q5", title: "LEVEL 5: ELDER HEDGE SHRINE",        subtitle: "Only perfect risk control",   diff: 55, locked: true },
 ];
 
 export default function CrossAssetDungeon() {

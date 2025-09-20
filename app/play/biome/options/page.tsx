@@ -15,10 +15,10 @@ type Level = { id: string; title: string; subtitle: string; diff: number; locked
 
 const LEVELS: Level[] = [
   { id: "o1", title: "LEVEL 1: VOL BASICS",    subtitle: "Payoff shapes • greeks 101",  diff: 15 },
-  { id: "o2", title: "LEVEL 2: GAMMA CHAMBER", subtitle: "Delta hedging • gamma risk",   diff: 25 },
-  { id: "o3", title: "SKEW LAB",               subtitle: "Smile dynamics • skew traps",  diff: 35 },
-  { id: "o4", title: "VEGA TEMPLE",            subtitle: "Term-structure • vol carry",   diff: 45 },
-  { id: "o5", title: "ELDER VOL SHRINE",       subtitle: "Perfect run required",         diff: 55, locked: true },
+  { id: "o2", title: "LEVEL 2: GAMMA CHAMBER", subtitle: "Delta hedging • gamma risk",   diff: 25, locked: true },
+  { id: "o3", title: "LEVEL 3: SKEW LAB",               subtitle: "Smile dynamics • skew traps",  diff: 35, locked: true },
+  { id: "o4", title: "LEVEL 4: VEGA TEMPLE",            subtitle: "Term-structure • vol carry",   diff: 45, locked: true },
+  { id: "o5", title: "LEVEL 5: ELDER VOL SHRINE",       subtitle: "Perfect run required",         diff: 55, locked: true },
 ];
 
 export default function OptionsDungeon() {
